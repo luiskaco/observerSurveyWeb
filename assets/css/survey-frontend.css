@@ -1,0 +1,653 @@
+/**
+ * Observatorio Survey — Estilos Frontend
+ * Colores de marca: Morado institucional #381e72, Acento Magenta #e11d48
+ */
+
+:root {
+    --obs-primary: #381e72;
+    --obs-primary-hover: #2a1458;
+    --obs-primary-light: #f3effc;
+    --obs-primary-border: #8b6ecc;
+    --obs-accent-pink: #d81b60;
+    --obs-accent-pink-light: #fdf2f4;
+    --obs-bg-card: #ffffff;
+    --obs-bg-input: #f8fafc;
+    --obs-border: #e2e8f0;
+    --obs-border-focus: #381e72;
+    --obs-text-title: #2a165b;
+    --obs-text-body: #334155;
+    --obs-text-muted: #64748b;
+    --obs-error: #e11d48;
+    --obs-success: #10b981;
+    --obs-radius-sm: 6px;
+    --obs-radius-md: 10px;
+    --obs-radius-lg: 16px;
+    --obs-shadow: 0 10px 30px -5px rgba(56, 30, 114, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+    --obs-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.obs-survey-container {
+    width: 100%;
+    max-width: 820px;
+    margin: 40px auto;
+    padding: 0 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--obs-text-body);
+    box-sizing: border-box;
+}
+
+.obs-survey-container * {
+    box-sizing: border-box;
+}
+
+/* Header General */
+.obs-survey-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.obs-badge {
+    display: inline-block;
+    background: #e8e0ff;
+    color: var(--obs-primary);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 50px;
+    margin-bottom: 16px;
+}
+
+.obs-main-title {
+    color: var(--obs-text-title);
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.25;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+}
+
+.obs-subtitle {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--obs-text-muted);
+    margin: 0 0 16px 0;
+}
+
+.obs-decorative-bars {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin: 0 auto 20px auto;
+}
+
+.obs-decorative-bars span {
+    display: block;
+    width: 24px;
+    height: 4px;
+    background: #7b63bf;
+    border-radius: 4px;
+}
+
+.obs-decorative-bars span:nth-child(2) {
+    width: 40px;
+    background: var(--obs-primary);
+}
+
+.obs-description {
+    font-size: 15px;
+    line-height: 1.65;
+    color: #475569;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* Card Principal */
+.obs-survey-card {
+    background: var(--obs-bg-card);
+    border: 1px solid var(--obs-border);
+    border-radius: var(--obs-radius-lg);
+    box-shadow: var(--obs-shadow);
+    padding: 36px 40px;
+    position: relative;
+}
+
+@media (max-width: 640px) {
+    .obs-survey-card {
+        padding: 24px 18px;
+    }
+    .obs-main-title {
+        font-size: 22px;
+    }
+}
+
+/* Barra de Progreso */
+.obs-progress-bar-wrapper {
+    margin-bottom: 24px;
+}
+
+.obs-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--obs-primary);
+    margin-bottom: 8px;
+}
+
+.obs-progress-track {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+
+.obs-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #5b3fa6, var(--obs-primary));
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+.obs-step-pills {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.obs-step-pill {
+    flex: 1;
+    height: 32px;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: default;
+    transition: var(--obs-transition);
+}
+
+.obs-step-pill.active {
+    background: var(--obs-primary);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(56, 30, 114, 0.3);
+}
+
+.obs-step-pill.completed {
+    background: #e8e0ff;
+    color: var(--obs-primary);
+}
+
+/* Aviso de Obligatoriedad */
+.obs-mandatory-notice {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--obs-accent-pink);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 28px;
+    padding: 6px 12px;
+    background: var(--obs-accent-pink-light);
+    border-radius: 6px;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Secciones / Steps */
+.obs-wizard-step {
+    display: none;
+    animation: obsFadeIn 0.35s ease forwards;
+}
+
+.obs-wizard-step.active {
+    display: block;
+}
+
+@keyframes obsFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.obs-step-heading {
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+}
+
+.obs-step-heading h3 {
+    color: var(--obs-text-title);
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    letter-spacing: -0.3px;
+}
+
+.obs-step-subinfo {
+    font-size: 14px;
+    color: var(--obs-text-muted);
+    margin: 0;
+}
+
+/* Form Groups & Inputs */
+.obs-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+@media (max-width: 640px) {
+    .obs-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+}
+
+.obs-field-group {
+    margin-bottom: 22px;
+}
+
+.obs-field-group label {
+    display: block;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--obs-text-title);
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.obs-field-group label .req {
+    color: var(--obs-error);
+    font-weight: 800;
+}
+
+.obs-field-group input[type="text"],
+.obs-field-group input[type="email"],
+.obs-field-group input[type="tel"],
+.obs-field-group input[type="number"],
+.obs-field-group select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    background: var(--obs-bg-input);
+    border: 1.5px solid var(--obs-border);
+    border-radius: var(--obs-radius-md);
+    color: var(--obs-text-body);
+    transition: var(--obs-transition);
+    outline: none;
+    font-family: inherit;
+}
+
+.obs-field-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23381e72'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px 16px;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+.obs-field-group input:focus,
+.obs-field-group select:focus {
+    background: #ffffff;
+    border-color: var(--obs-border-focus);
+    box-shadow: 0 0 0 3px rgba(56, 30, 114, 0.12);
+}
+
+.obs-field-group.has-error input,
+.obs-field-group.has-error select {
+    border-color: var(--obs-error);
+    background: #fff8f8;
+}
+
+.obs-field-error {
+    display: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--obs-error);
+    margin-top: 5px;
+}
+
+.obs-field-group.has-error .obs-field-error {
+    display: block;
+}
+
+/* Radio & Checkbox Choice Cards */
+.obs-options-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.obs-options-grid.cols-2 {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.obs-options-grid.cols-3 {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.obs-choice-card {
+    position: relative;
+    cursor: pointer;
+    margin: 0 !important;
+    display: block !important;
+}
+
+.obs-choice-card input[type="radio"],
+.obs-choice-card input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.obs-choice-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--obs-bg-input);
+    border: 1.5px solid var(--obs-border);
+    border-radius: var(--obs-radius-md);
+    transition: var(--obs-transition);
+    user-select: none;
+}
+
+.obs-choice-card:hover .obs-choice-content {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.obs-choice-card input:checked + .obs-choice-content {
+    background: var(--obs-primary-light);
+    border-color: var(--obs-primary);
+    box-shadow: 0 0 0 1px var(--obs-primary);
+}
+
+.obs-radio-circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #94a3b8;
+    background: #ffffff;
+    flex-shrink: 0;
+    position: relative;
+    transition: var(--obs-transition);
+}
+
+.obs-choice-card input:checked + .obs-choice-content .obs-radio-circle {
+    border-color: var(--obs-primary);
+    background: var(--obs-primary);
+}
+
+.obs-choice-card input:checked + .obs-choice-content .obs-radio-circle::after {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.obs-choice-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--obs-text-body);
+    line-height: 1.35;
+}
+
+.obs-choice-card input:checked + .obs-choice-content .obs-choice-label {
+    color: var(--obs-text-title);
+    font-weight: 600;
+}
+
+/* Bloque Condicional */
+.obs-conditional-block {
+    background: #faf8ff;
+    border: 1.5px dashed var(--obs-primary-border);
+    border-radius: var(--obs-radius-md);
+    padding: 20px;
+    margin: 18px 0;
+    animation: obsFadeIn 0.3s ease;
+}
+
+.obs-conditional-notice {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--obs-primary);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Consentimiento */
+.obs-consent-card {
+    background: #fffdf5;
+    border: 1.5px solid #fef08a;
+    border-radius: var(--obs-radius-md);
+    padding: 20px;
+    margin: 28px 0 10px 0;
+}
+
+.obs-consent-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #475569;
+    margin: 0 0 14px 0;
+}
+
+.obs-checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+.obs-checkbox-container input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.obs-custom-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #94a3b8;
+    background: #ffffff;
+    border-radius: 5px;
+    flex-shrink: 0;
+    position: relative;
+    transition: var(--obs-transition);
+}
+
+.obs-checkbox-container input:checked ~ .obs-custom-checkbox {
+    background: var(--obs-primary);
+    border-color: var(--obs-primary);
+}
+
+.obs-checkbox-container input:checked ~ .obs-custom-checkbox::after {
+    content: "";
+    position: absolute;
+    width: 5px;
+    height: 10px;
+    border: solid #ffffff;
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg);
+    top: 2px;
+    left: 6px;
+}
+
+.obs-checkbox-label {
+    font-size: 14.5px;
+    color: var(--obs-text-title);
+}
+
+/* Botones de Acción */
+.obs-form-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.obs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 28px;
+    font-size: 14.5px;
+    font-weight: 700;
+    border-radius: var(--obs-radius-md);
+    cursor: pointer;
+    transition: var(--obs-transition);
+    border: none;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.obs-btn-prev {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.obs-btn-prev:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.obs-btn-next,
+.obs-btn-submit {
+    background: var(--obs-primary);
+    color: #ffffff;
+    margin-left: auto;
+    box-shadow: 0 4px 14px rgba(56, 30, 114, 0.35);
+}
+
+.obs-btn-next:hover,
+.obs-btn-submit:hover {
+    background: var(--obs-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(56, 30, 114, 0.45);
+}
+
+.obs-btn-submit:disabled,
+.obs-btn-next:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.obs-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: obsSpin 0.7s linear infinite;
+}
+
+@keyframes obsSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Mensajes Globales de Estado */
+.obs-global-status {
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-radius: var(--obs-radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    display: none;
+}
+
+.obs-global-status.error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    display: block;
+}
+
+/* Pantalla de Éxito */
+.obs-success-view {
+    text-align: center;
+    padding: 40px 20px;
+    animation: obsFadeIn 0.4s ease;
+}
+
+.obs-success-icon-circle {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px auto;
+}
+
+.obs-checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: #10b981;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #10b981;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+}
+
+.obs-checkmark circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke-miterlimit: 10;
+    stroke: #10b981;
+    fill: none;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.obs-checkmark path {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+}
+
+@keyframes stroke {
+    100% { stroke-dashoffset: 0; }
+}
+
+.obs-success-title {
+    color: var(--obs-text-title);
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.obs-success-message {
+    font-size: 16px;
+    color: var(--obs-text-muted);
+    line-height: 1.6;
+    max-width: 580px;
+    margin: 0 auto 28px auto;
+}
