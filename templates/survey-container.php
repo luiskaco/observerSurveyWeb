@@ -75,13 +75,13 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="obs-grid-2">
                     <div class="obs-field-group">
                         <label for="age">Edad actual <span class="req">*</span></label>
-                        <input type="number" id="age" name="age" min="15" max="110" placeholder="Ej. 45" required>
+                        <input type="text" id="age" name="age" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="Ej. 45" required autocomplete="off">
                         <span class="obs-field-error"></span>
                     </div>
 
                     <div class="obs-field-group">
                         <label for="phone">Celular <span class="req">*</span></label>
-                        <input type="tel" id="phone" name="phone" placeholder="Ej. 987654321" required>
+                        <input type="tel" id="phone" name="phone" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="Ej. 987654321" required autocomplete="tel">
                         <span class="obs-field-error"></span>
                     </div>
                 </div>

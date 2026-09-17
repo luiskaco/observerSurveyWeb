@@ -114,6 +114,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Máscaras y Restricciones de Tipo en Tiempo Real ---
+    function setupInputMasks() {
+        const ageInput = document.getElementById('age');
+        const phoneInput = document.getElementById('phone');
+        const firstNameInput = document.getElementById('first_name');
+        const lastNameInput = document.getElementById('last_name');
+
+        // Campos numéricos (Solo dígitos)
+        const applyNumericOnly = (input, maxLength) => {
+            if (!input) return;
+
+            // Bloquear teclas no numéricas
+            input.addEventListener('keydown', (e) => {
+                // Permitir teclas de control: backspace, tab, delete, flechas, etc.
+                const allowedKeys = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'];
+                if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+                    return;
+                }
+                // Si no es un dígito del 0 al 9, bloquear
+                if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            // Limpiar pegado o autocompletado con caracteres inválidos
+            input.addEventListener('input', function () {
+                let clean = this.value.replace(/\D/g, '');
+                if (maxLength && clean.length > maxLength) {
+                    clean = clean.slice(0, maxLength);
+                }
+                this.value = clean;
+            });
+        };
+
+        applyNumericOnly(ageInput, 3);
+        applyNumericOnly(phoneInput, 9);
+
+        // Nombres y Apellidos (Solo letras, espacios, tildes y guiones)
+        const applyTextOnly = (input) => {
+            if (!input) return;
+            input.addEventListener('input', function () {
+                this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]/g, '');
+            });
+        };
+
+        applyTextOnly(firstNameInput);
+        applyTextOnly(lastNameInput);
+    }
+
     // --- Validación de Paso ---
     function validateStep(stepNumber) {
         const currentStepEl = form.querySelector(`.obs-wizard-step[data-step="${stepNumber}"]`);
@@ -136,16 +185,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (inputs.length === 1 && (inputs[0].type === 'text' || inputs[0].type === 'number' || inputs[0].type === 'email' || inputs[0].type === 'tel' || inputs[0].tagName === 'SELECT')) {
                 const input = inputs[0];
-                if (input.hasAttribute('required') && !input.value.trim()) {
+                const val = input.value.trim();
+
+                if (input.hasAttribute('required') && !val) {
                     groupValid = false;
-                } else if (input.type === 'email' && input.value.trim() && !validateEmail(input.value.trim())) {
+                } else if (input.type === 'email' && val && !validateEmail(val)) {
                     groupValid = false;
-                    errorMessage = 'Ingresa un correo electrónico válido.';
-                } else if (input.id === 'age' && input.value.trim()) {
-                    const ageNum = parseInt(input.value.trim(), 10);
+                    errorMessage = 'Ingresa un correo electrónico válido (ej. usuario@dominio.com).';
+                } else if (input.id === 'age' && val) {
+                    const ageNum = parseInt(val, 10);
                     if (isNaN(ageNum) || ageNum < 15 || ageNum > 110) {
                         groupValid = false;
-                        errorMessage = 'Ingresa una edad válida (15 a 110).';
+                        errorMessage = 'Ingresa una edad válida (entre 15 y 110 años).';
+                    }
+                } else if (input.id === 'phone' && val) {
+                    if (val.length < 9) {
+                        groupValid = false;
+                        errorMessage = 'El número de celular debe tener 9 dígitos.';
+                    }
+                } else if ((input.id === 'first_name' || input.id === 'last_name') && val) {
+                    if (val.length < 2) {
+                        groupValid = false;
+                        errorMessage = 'Por favor ingresa un nombre válido.';
                     }
                 }
             } else if (inputs.length > 0 && inputs[0].type === 'radio') {
@@ -397,6 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Iniciar
     setupConditionalLogic();
+    setupInputMasks();
     loadDraft();
     updateWizardUI();
 });
