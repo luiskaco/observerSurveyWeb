@@ -3,6 +3,13 @@
  * Colores de marca: Morado institucional #381e72, Acento Magenta #e11d48
  */
 
+/* Ocultar títulos por defecto del tema WordPress/Elementor en la página */
+.entry-title, 
+h1.page-title, 
+.page-header {
+    display: none !important;
+}
+
 :root {
     --obs-primary: #381e72;
     --obs-primary-hover: #2a1458;
