@@ -200,7 +200,8 @@ class Google_Sheets {
         }
 
         $spreadsheet_id = $config['spreadsheet_id'];
-        $sheet_name     = ! empty( $config['sheet_name'] ) ? $config['sheet_name'] : 'Respuestas';
+        $raw_sheet_name = ! empty( $config['sheet_name'] ) ? $config['sheet_name'] : 'Respuestas';
+        $sheet_name     = self::resolve_sheet_name( $spreadsheet_id, $raw_sheet_name, $token );
 
         // Asegurar que existan los encabezados en la primera fila
         $header_check = self::ensure_headers( $spreadsheet_id, $sheet_name, $token );
@@ -210,11 +211,12 @@ class Google_Sheets {
 
         // Construir la fila con todas las columnas
         $row_values = self::format_submission_row( $submission, $responses );
+        $range      = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
 
         $url = sprintf(
-            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s!A:A:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
             urlencode( $spreadsheet_id ),
-            urlencode( $sheet_name )
+            rawurlencode( $range )
         );
 
         $response = wp_remote_post( $url, array(
@@ -270,18 +272,92 @@ class Google_Sheets {
     }
 
     /**
+     * Resuelve y asegura la existencia de la pestaña en Google Sheets
+     */
+    public static function resolve_sheet_name( $spreadsheet_id, $requested_name, $token ) {
+        $url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s?fields=sheets.properties.title',
+            urlencode( $spreadsheet_id )
+        );
+
+        $response = wp_remote_get( $url, array(
+            'timeout' => 10,
+            'headers' => array( 'Authorization' => 'Bearer ' . $token ),
+        ) );
+
+        if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+            return $requested_name ?: 'Respuestas';
+        }
+
+        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        $available = array();
+        if ( ! empty( $body['sheets'] ) ) {
+            foreach ( $body['sheets'] as $s ) {
+                if ( isset( $s['properties']['title'] ) ) {
+                    $available[] = $s['properties']['title'];
+                }
+            }
+        }
+
+        if ( empty( $available ) ) {
+            return $requested_name ?: 'Respuestas';
+        }
+
+        // 1. Si existe la pestaña solicitada
+        foreach ( $available as $title ) {
+            if ( strcasecmp( $title, $requested_name ) === 0 ) {
+                return $title;
+            }
+        }
+
+        // 2. Si no existe, intentar crearla automáticamente
+        $create_title = ! empty( $requested_name ) ? $requested_name : 'Respuestas';
+        $batch_url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s:batchUpdate',
+            urlencode( $spreadsheet_id )
+        );
+
+        $create_res = wp_remote_post( $batch_url, array(
+            'timeout' => 10,
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ),
+            'body'    => json_encode( array(
+                'requests' => array(
+                    array(
+                        'addSheet' => array(
+                            'properties' => array(
+                                'title' => $create_title,
+                            ),
+                        ),
+                    ),
+                ),
+            ) ),
+        ) );
+
+        if ( ! is_wp_error( $create_res ) && 200 === wp_remote_retrieve_response_code( $create_res ) ) {
+            return $create_title;
+        }
+
+        // 3. Fallback a la primera pestaña existente
+        return $available[0];
+    }
+
+    /**
      * Asegura que los encabezados de columnas existan en la fila 1
      */
     public static function ensure_headers( $spreadsheet_id, $sheet_name, $token ) {
         $cache_key = 'obs_headers_ensured_' . md5( $spreadsheet_id . '_' . $sheet_name );
         if ( get_transient( $cache_key ) ) {
-            return;
+            return true;
         }
 
+        $range1 = "'" . str_replace( "'", "''", $sheet_name ) . "'!A1:Z1";
         $url = sprintf(
-            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s!A1:Z1',
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s',
             urlencode( $spreadsheet_id ),
-            urlencode( $sheet_name )
+            rawurlencode( $range1 )
         );
 
         $response = wp_remote_get( $url, array(
@@ -293,19 +369,20 @@ class Google_Sheets {
             $data = json_decode( wp_remote_retrieve_body( $response ), true );
             if ( ! empty( $data['values'][0] ) ) {
                 set_transient( $cache_key, 1, 86400 );
-                return; // Ya tiene encabezados
+                return true; // Ya tiene encabezados
             }
         }
 
         // Escribir encabezados en fila 1
         $headers = self::get_headers_list();
+        $range_write = "'" . str_replace( "'", "''", $sheet_name ) . "'!A1";
         $write_url = sprintf(
-            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s!A1?valueInputOption=USER_ENTERED',
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s?valueInputOption=USER_ENTERED',
             urlencode( $spreadsheet_id ),
-            urlencode( $sheet_name )
+            rawurlencode( $range_write )
         );
 
-        wp_remote_request( $write_url, array(
+        $res = wp_remote_request( $write_url, array(
             'method'  => 'PUT',
             'timeout' => 15,
             'headers' => array(
@@ -318,6 +395,7 @@ class Google_Sheets {
         ) );
 
         set_transient( $cache_key, 1, 86400 );
+        return true;
     }
 
     /**
