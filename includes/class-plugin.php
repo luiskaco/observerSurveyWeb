@@ -7,6 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once OBS_SURVEY_PLUGIN_DIR . 'includes/class-rest-controller.php';
 require_once OBS_SURVEY_PLUGIN_DIR . 'includes/class-admin-page.php';
+require_once OBS_SURVEY_PLUGIN_DIR . 'includes/class-google-sheets.php';
 
 class Plugin {
     private $rest_controller;

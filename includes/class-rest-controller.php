@@ -120,10 +120,22 @@ class Rest_Controller {
             ), 500 );
         }
 
+        $submission_id = $wpdb->insert_id;
+        $data['id'] = $submission_id;
+
+        // Sincronizar con Google Sheets si está configurado
+        if ( class_exists( 'Observatorio\\Survey\\Google_Sheets' ) ) {
+            try {
+                Google_Sheets::append_submission( $data, $sanitized_responses );
+            } catch ( \Throwable $e ) {
+                error_log( '[Observatorio Survey] Error sincronizando a Google Sheets: ' . $e->getMessage() );
+            }
+        }
+
         return new \WP_REST_Response( array(
             'status'  => 'success',
             'message' => '¡Muchas gracias! Tu experiencia ha sido registrada exitosamente.',
-            'id'      => $wpdb->insert_id,
+            'id'      => $submission_id,
         ), 200 );
     }
 

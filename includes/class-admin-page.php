@@ -10,6 +10,8 @@ class Admin_Page {
     public function register_hooks() {
         add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
         add_action( 'admin_init', array( $this, 'handle_actions' ) );
+        add_action( 'wp_ajax_obs_test_gsheets', array( $this, 'ajax_test_gsheets' ) );
+        add_action( 'wp_ajax_obs_sync_pending_gsheets', array( $this, 'ajax_sync_pending_gsheets' ) );
     }
 
     public function add_menu_page() {
@@ -22,14 +24,48 @@ class Admin_Page {
             'dashicons-clipboard',
             25
         );
+
+        add_submenu_page(
+            'observatorio-surveys',
+            __( 'Respuestas Recibidas', 'observatorio-survey' ),
+            __( 'Respuestas', 'observatorio-survey' ),
+            'manage_options',
+            'observatorio-surveys',
+            array( $this, 'render_admin_page' )
+        );
+
+        add_submenu_page(
+            'observatorio-surveys',
+            __( 'Configuración Google Sheets', 'observatorio-survey' ),
+            __( 'Google Sheets', 'observatorio-survey' ),
+            'manage_options',
+            'observatorio-survey-gsheets',
+            array( $this, 'render_gsheets_page' )
+        );
     }
 
     public function handle_actions() {
-        if ( ! isset( $_GET['page'] ) || 'observatorio-surveys' !== $_GET['page'] ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
 
-        if ( ! current_user_can( 'manage_options' ) ) {
+        // Guardar configuración de Google Sheets
+        if ( isset( $_POST['obs_save_gsheets_settings'] ) ) {
+            check_admin_referer( 'obs_save_gsheets_action', 'obs_gsheets_nonce' );
+
+            $data = array(
+                'enabled'        => isset( $_POST['enabled'] ) ? 1 : 0,
+                'spreadsheet_id' => sanitize_text_field( $_POST['spreadsheet_id'] ?? '' ),
+                'sheet_name'     => sanitize_text_field( $_POST['sheet_name'] ?? 'Respuestas' ),
+                'credentials'    => ! empty( $_POST['credentials'] ) ? wp_unslash( $_POST['credentials'] ) : '',
+            );
+
+            Google_Sheets::save_config( $data );
+            wp_safe_redirect( admin_url( 'admin.php?page=observatorio-survey-gsheets&saved=1' ) );
+            exit;
+        }
+
+        if ( ! isset( $_GET['page'] ) || 'observatorio-surveys' !== $_GET['page'] ) {
             return;
         }
 
@@ -51,6 +87,65 @@ class Admin_Page {
             wp_safe_redirect( admin_url( 'admin.php?page=observatorio-surveys&deleted=1' ) );
             exit;
         }
+
+        // Sincronizar un registro individual a Google Sheets
+        if ( isset( $_GET['action'] ) && 'sync_single' === $_GET['action'] && isset( $_GET['id'] ) ) {
+            $id = absint( $_GET['id'] );
+            check_admin_referer( 'obs_sync_single_' . $id );
+
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'obs_survey_submissions';
+            $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $id ), ARRAY_A );
+
+            if ( $row ) {
+                $responses = json_decode( $row['responses_json'], true ) ?: array();
+                $res = Google_Sheets::append_submission( $row, $responses, true );
+                if ( true === $res ) {
+                    wp_safe_redirect( admin_url( 'admin.php?page=observatorio-surveys&synced=1' ) );
+                } else {
+                    $err = is_wp_error( $res ) ? $res->get_error_message() : 'Error al conectar con Google Sheets';
+                    wp_safe_redirect( admin_url( 'admin.php?page=observatorio-surveys&sync_error=' . urlencode( $err ) ) );
+                }
+            } else {
+                wp_safe_redirect( admin_url( 'admin.php?page=observatorio-surveys' ) );
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Endpoint AJAX para probar conexión con Google Sheets
+     */
+    public function ajax_test_gsheets() {
+        check_ajax_referer( 'obs_gsheets_ajax_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
+        }
+
+        $spreadsheet_id = sanitize_text_field( $_POST['spreadsheet_id'] ?? '' );
+        $sheet_name     = sanitize_text_field( $_POST['sheet_name'] ?? 'Respuestas' );
+
+        $result = Google_Sheets::test_connection( $spreadsheet_id, $sheet_name );
+        if ( $result['success'] ) {
+            wp_send_json_success( $result );
+        } else {
+            wp_send_json_error( $result );
+        }
+    }
+
+    /**
+     * Endpoint AJAX para sincronizar todos los registros pendientes
+     */
+    public function ajax_sync_pending_gsheets() {
+        check_ajax_referer( 'obs_gsheets_ajax_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => 'Permisos insuficientes.' ) );
+        }
+
+        $result = Google_Sheets::sync_all_pending( 100 );
+        wp_send_json_success( $result );
     }
 
     private function export_csv() {
@@ -58,7 +153,7 @@ class Admin_Page {
         $table_name = $wpdb->prefix . 'obs_survey_submissions';
         $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY id DESC", ARRAY_A );
 
-        $filename = 'encuestas_cancer_mama_' . date( 'Y-m-d_His' ) . '.csv';
+        $filename = 'encuestas_cancer_mama_' . gmdate( 'Y-m-d_His' ) . '.csv';
 
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename=' . $filename );
@@ -68,7 +163,7 @@ class Admin_Page {
         $output = fopen( 'php://output', 'w' );
         fprintf( $output, chr( 0xEF ) . chr( 0xBB ) . chr( 0xBF ) ); // UTF-8 BOM
 
-        $questions_map = $this->get_questions_map();
+        $questions_map = Google_Sheets::get_questions_map();
 
         // Cabeceras base
         $headers = array(
@@ -111,7 +206,11 @@ class Admin_Page {
                 );
 
                 foreach ( $questions_map as $key => $label ) {
-                    $line[] = isset( $responses[ $key ] ) ? $responses[ $key ] : '';
+                    $val = isset( $responses[ $key ] ) ? $responses[ $key ] : '';
+                    if ( is_array( $val ) ) {
+                        $val = implode( ', ', $val );
+                    }
+                    $line[] = $val;
                 }
 
                 fputcsv( $output, $line );
@@ -139,6 +238,7 @@ class Admin_Page {
         }
 
         $total_submissions = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name $where" );
+        $unsynced_count    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE synced_to_sheets = 0" );
         $paged = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
         $limit = 20;
         $offset = ( $paged - 1 ) * $limit;
@@ -146,23 +246,50 @@ class Admin_Page {
 
         $submissions = $wpdb->get_results( "SELECT * FROM $table_name $where ORDER BY id DESC LIMIT $limit OFFSET $offset", ARRAY_A );
         $export_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=export_csv' ), 'obs_export_csv_action', 'obs_export_nonce' );
+        $gsheets_config = Google_Sheets::get_config();
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Encuestas: El Viaje de la Paciente con Cáncer de Mama</h1>
+            
             <a href="<?php echo esc_url( $export_url ); ?>" class="button button-primary" style="margin-left: 10px; background: #381e72; border-color: #2a1458;">
-                <span class="dashicons dashicons-download" style="vertical-align: middle; margin-top: -2px;"></span> Exportar Todo a CSV (Excel)
+                <span class="dashicons dashicons-download" style="vertical-align: middle; margin-top: -2px;"></span> Exportar Todo a CSV
             </a>
+
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-survey-gsheets' ) ); ?>" class="button" style="margin-left: 5px;">
+                <span class="dashicons dashicons-google" style="vertical-align: middle; margin-top: -2px;"></span> Ajustes Google Sheets
+            </a>
+
             <hr class="wp-header-end">
 
             <?php if ( isset( $_GET['deleted'] ) ) : ?>
                 <div class="notice notice-success is-dismissible"><p>Registro eliminado correctamente.</p></div>
             <?php endif; ?>
+            <?php if ( isset( $_GET['synced'] ) ) : ?>
+                <div class="notice notice-success is-dismissible"><p>Registro sincronizado exitosamente con Google Sheets.</p></div>
+            <?php endif; ?>
+            <?php if ( isset( $_GET['sync_error'] ) ) : ?>
+                <div class="notice notice-error is-dismissible"><p>Error al sincronizar con Google Sheets: <?php echo esc_html( urldecode( $_GET['sync_error'] ) ); ?></p></div>
+            <?php endif; ?>
 
             <div style="margin: 20px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div style="display: flex; gap: 20px;">
+                <div style="display: flex; gap: 15px;">
                     <div style="background: #fff; padding: 14px 22px; border-radius: 8px; border-left: 4px solid #381e72; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-                        <div style="font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total de Encuestas</div>
-                        <div style="font-size: 26px; font-weight: bold; color: #381e72; margin-top: 2px;"><?php echo esc_html( $total_submissions ); ?></div>
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Encuestas</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #381e72; margin-top: 2px;"><?php echo esc_html( $total_submissions ); ?></div>
+                    </div>
+
+                    <div style="background: #fff; padding: 14px 22px; border-radius: 8px; border-left: 4px solid <?php echo ! empty( $gsheets_config['enabled'] ) ? '#10b981' : '#f59e0b'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Google Sheets Sync</div>
+                        <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 4px;">
+                            <?php if ( ! empty( $gsheets_config['enabled'] ) ) : ?>
+                                <span style="color: #059669;">● Activo</span>
+                                <?php if ( $unsynced_count > 0 ) : ?>
+                                    <span style="font-size: 12px; color: #d97706; margin-left: 5px;">(<?php echo esc_html( $unsynced_count ); ?> pendientes)</span>
+                                <?php endif; ?>
+                            <?php else : ?>
+                                <span style="color: #d97706;">● Inactivo</span>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -179,50 +306,55 @@ class Admin_Page {
             <table class="wp-list-table widefat fixed striped table-view-list">
                 <thead>
                     <tr>
-                        <th style="width: 65px;">ID</th>
-                        <th style="width: 130px;">Fecha</th>
+                        <th style="width: 55px;">ID</th>
+                        <th style="width: 120px;">Fecha</th>
                         <th>Paciente</th>
                         <th>Contacto</th>
                         <th>Región</th>
                         <th>Sistema Salud</th>
-                        <th>Edad Diagnóstico</th>
-                        <th style="width: 140px; text-align: center;">Acciones</th>
+                        <th>Edad Diag.</th>
+                        <th style="width: 100px; text-align: center;">Google Sheets</th>
+                        <th style="width: 130px; text-align: center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ( empty( $submissions ) ) : ?>
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 35px; color: #64748b; font-size: 15px;">
+                            <td colspan="9" style="text-align: center; padding: 35px; color: #64748b; font-size: 15px;">
                                 No se encontraron respuestas registradas.
                             </td>
                         </tr>
                     <?php else : ?>
                         <?php foreach ( $submissions as $sub ) : ?>
-                            <?php 
-                            $view_url = admin_url( 'admin.php?page=observatorio-surveys&view_id=' . $sub['id'] );
+                            <?php
+                            $detail_url = admin_url( 'admin.php?page=observatorio-surveys&view_id=' . $sub['id'] );
                             $delete_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=delete&id=' . $sub['id'] ), 'obs_delete_entry_' . $sub['id'] );
+                            $sync_url   = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] ), 'obs_sync_single_' . $sub['id'] );
+                            $is_synced  = ! empty( $sub['synced_to_sheets'] );
                             ?>
                             <tr>
                                 <td><strong>#<?php echo esc_html( $sub['id'] ); ?></strong></td>
-                                <td><?php echo esc_html( date_i18n( 'd/m/Y H:i', strtotime( $sub['created_at'] ) ) ); ?></td>
+                                <td><?php echo esc_html( date( 'd/m/Y H:i', strtotime( $sub['created_at'] ) ) ); ?></td>
+                                <td><strong><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></strong> (<?php echo esc_html( $sub['age'] ); ?> años)</td>
                                 <td>
-                                    <strong style="color: #381e72; font-size: 14px;"><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></strong><br>
-                                    <span style="color: #64748b;"><?php echo esc_html( $sub['age'] ); ?> años</span>
+                                    <?php echo esc_html( $sub['email'] ); ?><br>
+                                    <small style="color:#64748b;"><?php echo esc_html( $sub['phone'] ); ?></small>
                                 </td>
-                                <td>
-                                    <a href="mailto:<?php echo esc_attr( $sub['email'] ); ?>"><?php echo esc_html( $sub['email'] ); ?></a><br>
-                                    <span style="color: #64748b;">📞 <?php echo esc_html( $sub['phone'] ); ?></span>
-                                </td>
-                                <td><span style="background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 12px;"><?php echo esc_html( $sub['region'] ); ?></span></td>
+                                <td><?php echo esc_html( $sub['region'] ); ?></td>
                                 <td><?php echo esc_html( $sub['health_system'] ); ?></td>
                                 <td><?php echo esc_html( $sub['age_diagnosis'] ); ?></td>
                                 <td style="text-align: center;">
-                                    <a href="<?php echo esc_url( $view_url ); ?>" class="button button-small" style="background: #381e72; color: #fff; border-color: #381e72;">
-                                        Ver Respuestas
-                                    </a>
-                                    <a href="<?php echo esc_url( $delete_url ); ?>" class="button button-small button-link-delete" onclick="return confirm('¿Estás seguro de eliminar este registro?');" title="Eliminar">
-                                        <span class="dashicons dashicons-trash" style="vertical-align: middle; margin-top: -1px; font-size: 16px;"></span>
-                                    </a>
+                                    <?php if ( $is_synced ) : ?>
+                                        <span class="dashicons dashicons-yes-alt" style="color: #10b981;" title="Sincronizado a Google Sheets (<?php echo esc_attr( $sub['synced_at'] ?? '' ); ?>)"></span>
+                                    <?php else : ?>
+                                        <a href="<?php echo esc_url( $sync_url ); ?>" class="button button-small" title="Sincronizar ahora con Google Sheets" style="font-size: 11px; padding: 0 6px;">
+                                            <span class="dashicons dashicons-update" style="font-size: 14px; vertical-align: middle; margin-top: -2px;"></span> Enviar
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align: center;">
+                                    <a href="<?php echo esc_url( $detail_url ); ?>" class="button button-small" title="Ver Detalles">Ver</a>
+                                    <a href="<?php echo esc_url( $delete_url ); ?>" class="button button-small button-link-delete" onclick="return confirm('¿Estás seguro de eliminar esta respuesta?');" style="color: #b91c1c; margin-left: 4px;">Borrar</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -234,16 +366,15 @@ class Admin_Page {
                 <div class="tablenav bottom">
                     <div class="tablenav-pages">
                         <span class="displaying-num"><?php echo esc_html( $total_submissions ); ?> elementos</span>
-                        <?php
-                        echo paginate_links( array(
-                            'base'      => add_query_arg( 'paged', '%#%' ),
-                            'format'    => '',
-                            'prev_text' => '&laquo;',
-                            'next_text' => '&raquo;',
-                            'total'     => $total_pages,
-                            'current'   => $paged,
-                        ) );
-                        ?>
+                        <span class="pagination-links">
+                            <?php for ( $i = 1; $i <= $total_pages; $i++ ) : ?>
+                                <?php if ( $i === $paged ) : ?>
+                                    <span class="tablenav-pages-navspan button disabled" aria-hidden="true"><?php echo esc_html( $i ); ?></span>
+                                <?php else : ?>
+                                    <a class="button" href="<?php echo esc_url( add_query_arg( 'paged', $i ) ); ?>"><?php echo esc_html( $i ); ?></a>
+                                <?php endif; ?>
+                            <?php endfor; ?>
+                        </span>
                     </div>
                 </div>
             <?php endif; ?>
@@ -251,185 +382,318 @@ class Admin_Page {
         <?php
     }
 
-    public function render_detail_view( $id ) {
+    /**
+     * Renderiza la página de configuración de Google Sheets
+     */
+    public function render_gsheets_page() {
+        $config = Google_Sheets::get_config();
+        $creds  = Google_Sheets::get_credentials();
+        $client_email = $creds['client_email'] ?? 'No configurado';
+        $ajax_nonce = wp_create_nonce( 'obs_gsheets_ajax_nonce' );
+        ?>
+        <div class="wrap">
+            <h1 class="wp-heading-inline">Conexión con Google Sheets</h1>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="button" style="margin-left: 10px;">← Volver a Encuestas</a>
+            <hr class="wp-header-end">
+
+            <?php if ( isset( $_GET['saved'] ) ) : ?>
+                <div class="notice notice-success is-dismissible"><p>Ajustes de Google Sheets guardados correctamente.</p></div>
+            <?php endif; ?>
+
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-top: 20px;">
+                <!-- Formulario de Configuración -->
+                <div style="background: #fff; padding: 24px 28px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <h2 style="margin-top: 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; color: #1e293b;">
+                        Parámetros de Integración
+                    </h2>
+
+                    <form method="post" action="">
+                        <?php wp_nonce_field( 'obs_save_gsheets_action', 'obs_gsheets_nonce' ); ?>
+                        <input type="hidden" name="obs_save_gsheets_settings" value="1">
+
+                        <table class="form-table" role="presentation">
+                            <tr>
+                                <th scope="row">Sincronización Automática</th>
+                                <td>
+                                    <label>
+                                        <input type="checkbox" name="enabled" value="1" <?php checked( ! empty( $config['enabled'] ) ); ?>>
+                                        <strong>Habilitar envío inmediato a Google Sheets al completar cada encuesta</strong>
+                                    </label>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row"><label for="spreadsheet_id">ID o URL de Google Sheet</label></th>
+                                <td>
+                                    <input type="text" id="spreadsheet_id" name="spreadsheet_id" value="<?php echo esc_attr( $config['spreadsheet_id'] ); ?>" class="regular-text" style="width: 100%;" placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit">
+                                    <p class="description">Puedes pegar el ID directo o la URL completa de tu Google Sheet.</p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row"><label for="sheet_name">Nombre de la Pestaña / Hoja</label></th>
+                                <td>
+                                    <input type="text" id="sheet_name" name="sheet_name" value="<?php echo esc_attr( $config['sheet_name'] ); ?>" class="regular-text" placeholder="Respuestas">
+                                    <p class="description">Nombre de la pestaña dentro del libro (ej. <code>Respuestas</code> o <code>Hoja 1</code>). Si no tiene cabeceras, se crearán automáticamente.</p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row"><label for="credentials">Credenciales JSON Personalizadas (Opcional)</label></th>
+                                <td>
+                                    <textarea id="credentials" name="credentials" rows="4" style="width: 100%; font-family: monospace; font-size: 11px;" placeholder="Pega el contenido del archivo .json solo si deseas sobrescribir el archivo por defecto."><?php echo esc_textarea( $config['credentials'] ); ?></textarea>
+                                    <p class="description">
+                                        <?php if ( ! empty( $creds ) ) : ?>
+                                            <span style="color: #059669; font-weight: 600;">✓ Credenciales activas detectadas:</span> <code><?php echo esc_html( $client_email ); ?></code>
+                                        <?php else : ?>
+                                            <span style="color: #dc2626; font-weight: 600;">✕ No se detectaron credenciales. Pega el JSON del Service Account arriba.</span>
+                                        <?php endif; ?>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p class="submit" style="display: flex; gap: 10px; align-items: center;">
+                            <button type="submit" class="button button-primary" style="background: #381e72; border-color: #2a1458; padding: 4px 18px;">
+                                Guardar Ajustes
+                            </button>
+                            <button type="button" id="btn-test-connection" class="button button-secondary">
+                                <span class="dashicons dashicons-admin-plugins" style="vertical-align: middle; margin-top: -2px;"></span> Probar Conexión
+                            </button>
+                            <button type="button" id="btn-sync-pending" class="button button-secondary">
+                                <span class="dashicons dashicons-update" style="vertical-align: middle; margin-top: -2px;"></span> Sincronizar Pendientes
+                            </button>
+                        </p>
+                    </form>
+
+                    <!-- Caja de Resultados AJAX -->
+                    <div id="test-result-box" style="display: none; margin-top: 15px; padding: 14px 18px; border-radius: 6px; font-size: 13px;"></div>
+                </div>
+
+                <!-- Tarjeta de Instrucciones y Service Account -->
+                <div>
+                    <div style="background: #fff; padding: 22px 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-top: 4px solid #381e72;">
+                        <h3 style="margin-top: 0; color: #1e293b;">Paso Obligatorio para Conectar</h3>
+                        <p style="color: #475569; font-size: 13px; line-height: 1.5;">
+                            Para que el plugin pueda escribir en tu Google Sheet, debes <strong>compartir la hoja de cálculo</strong> con la cuenta de servicio con rol de <strong>Editor</strong>.
+                        </p>
+
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin: 15px 0;">
+                            <label style="display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">Correo de la Cuenta de Servicio:</label>
+                            <input type="text" id="service-account-email" readonly value="<?php echo esc_attr( $client_email ); ?>" style="width: 100%; background: #fff; font-family: monospace; font-size: 12px;" onclick="this.select();">
+                            <button type="button" class="button button-small" style="margin-top: 8px; width: 100%;" onclick="navigator.clipboard.writeText(document.getElementById('service-account-email').value); alert('¡Correo copiado al portapapeles!');">
+                                📋 Copiar Correo para Compartir en Google Sheets
+                            </button>
+                        </div>
+
+                        <div style="font-size: 12px; color: #64748b; line-height: 1.6;">
+                            <strong>Instrucciones rápidas:</strong>
+                            <ol style="margin: 6px 0 0 16px; padding: 0;">
+                                <li>Abre tu hoja en Google Sheets.</li>
+                                <li>Clic en <strong>Compartir</strong> (botón verde/azul arriba a la derecha).</li>
+                                <li>Pega el correo anterior.</li>
+                                <li>Asegúrate que el rol sea <strong>Editor</strong> y desmarca "Notificar a los usuarios".</li>
+                                <li>Guarda y haz clic en <strong>Probar Conexión</strong>.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnTest = document.getElementById('btn-test-connection');
+            const btnSync = document.getElementById('btn-sync-pending');
+            const resultBox = document.getElementById('test-result-box');
+
+            if (btnTest) {
+                btnTest.addEventListener('click', function() {
+                    const sheetId = document.getElementById('spreadsheet_id').value.trim();
+                    const sheetName = document.getElementById('sheet_name').value.trim();
+
+                    if (!sheetId) {
+                        alert('Por favor ingresa primero el ID o URL del Google Sheet.');
+                        return;
+                    }
+
+                    btnTest.disabled = true;
+                    btnTest.textContent = 'Probando conexión...';
+                    resultBox.style.display = 'block';
+                    resultBox.style.background = '#f1f5f9';
+                    resultBox.style.color = '#334155';
+                    resultBox.style.border = '1px solid #cbd5e1';
+                    resultBox.innerHTML = '⏳ Conectando con Google Sheets API...';
+
+                    const formData = new FormData();
+                    formData.append('action', 'obs_test_gsheets');
+                    formData.append('nonce', '<?php echo esc_js( $ajax_nonce ); ?>');
+                    formData.append('spreadsheet_id', sheetId);
+                    formData.append('sheet_name', sheetName);
+
+                    fetch(ajaxurl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        btnTest.disabled = false;
+                        btnTest.innerHTML = '<span class="dashicons dashicons-admin-plugins" style="vertical-align: middle; margin-top: -2px;"></span> Probar Conexión';
+
+                        if (data.success) {
+                            resultBox.style.background = '#ecfdf5';
+                            resultBox.style.color = '#065f46';
+                            resultBox.style.border = '1px solid #6ee7b7';
+                            resultBox.innerHTML = '<strong>✅ ' + data.data.message + '</strong><br>' +
+                                '• <strong>Título del libro:</strong> ' + data.data.spreadsheet_title + '<br>' +
+                                '• <strong>Pestaña destino:</strong> ' + data.data.target_sheet + ' ' + (data.data.sheet_found ? '(Encontrada)' : '(Se creará al insertar)') + '<br>' +
+                                '• <strong>Pestañas existentes:</strong> ' + data.data.sheets.join(', ');
+                        } else {
+                            resultBox.style.background = '#fef2f2';
+                            resultBox.style.color = '#991b1b';
+                            resultBox.style.border = '1px solid #fca5a5';
+                            resultBox.innerHTML = '<strong>❌ ' + (data.data.message || 'Error de conexión') + '</strong><br>' +
+                                (data.data.email ? '<small>Service Account: ' + data.data.email + '</small>' : '');
+                        }
+                    })
+                    .catch(err => {
+                        btnTest.disabled = false;
+                        btnTest.innerHTML = '<span class="dashicons dashicons-admin-plugins" style="vertical-align: middle; margin-top: -2px;"></span> Probar Conexión';
+                        resultBox.style.background = '#fef2f2';
+                        resultBox.style.color = '#991b1b';
+                        resultBox.style.border = '1px solid #fca5a5';
+                        resultBox.innerHTML = '<strong>❌ Error en la solicitud AJAX:</strong> ' + err.message;
+                    });
+                });
+            }
+
+            if (btnSync) {
+                btnSync.addEventListener('click', function() {
+                    btnSync.disabled = true;
+                    btnSync.textContent = 'Sincronizando...';
+                    resultBox.style.display = 'block';
+                    resultBox.style.background = '#f1f5f9';
+                    resultBox.style.color = '#334155';
+                    resultBox.style.border = '1px solid #cbd5e1';
+                    resultBox.innerHTML = '⏳ Enviando registros pendientes a Google Sheets...';
+
+                    const formData = new FormData();
+                    formData.append('action', 'obs_sync_pending_gsheets');
+                    formData.append('nonce', '<?php echo esc_js( $ajax_nonce ); ?>');
+
+                    fetch(ajaxurl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        btnSync.disabled = false;
+                        btnSync.innerHTML = '<span class="dashicons dashicons-update" style="vertical-align: middle; margin-top: -2px;"></span> Sincronizar Pendientes';
+
+                        if (data.success) {
+                            resultBox.style.background = '#ecfdf5';
+                            resultBox.style.color = '#065f46';
+                            resultBox.style.border = '1px solid #6ee7b7';
+                            resultBox.innerHTML = '<strong>✅ Sincronización completada:</strong> ' + data.data.synced + ' de ' + data.data.total + ' registros pendientes sincronizados.';
+                        } else {
+                            resultBox.style.background = '#fef2f2';
+                            resultBox.style.color = '#991b1b';
+                            resultBox.style.border = '1px solid #fca5a5';
+                            resultBox.innerHTML = '<strong>❌ Error:</strong> ' + (data.data.message || 'No se pudo completar la sincronización.');
+                        }
+                    })
+                    .catch(err => {
+                        btnSync.disabled = false;
+                        btnSync.innerHTML = '<span class="dashicons dashicons-update" style="vertical-align: middle; margin-top: -2px;"></span> Sincronizar Pendientes';
+                        resultBox.style.background = '#fef2f2';
+                        resultBox.style.color = '#991b1b';
+                        resultBox.style.border = '1px solid #fca5a5';
+                        resultBox.innerHTML = '<strong>❌ Error de red:</strong> ' + err.message;
+                    });
+                });
+            }
+        });
+        </script>
+        <?php
+    }
+
+    private function render_detail_view( $id ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'obs_survey_submissions';
         $sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $id ), ARRAY_A );
 
         if ( ! $sub ) {
-            echo '<div class="wrap"><div class="notice notice-error"><p>Registro no encontrado.</p></div><a href="' . esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ) . '" class="button">Volver al listado</a></div>';
-            return;
+            wp_die( 'Registro no encontrado.' );
         }
 
         $responses = json_decode( $sub['responses_json'], true ) ?: array();
-        $sections = $this->get_grouped_questions();
-        $back_url = admin_url( 'admin.php?page=observatorio-surveys' );
-        $delete_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=delete&id=' . $sub['id'] ), 'obs_delete_entry_' . $sub['id'] );
+        $questions_map = Google_Sheets::get_questions_map();
+        $sync_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] ), 'obs_sync_single_' . $sub['id'] );
         ?>
         <div class="wrap">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div>
-                    <a href="<?php echo esc_url( $back_url ); ?>" class="button" style="margin-bottom: 8px;">
-                        &larr; Volver al Listado
-                    </a>
-                    <h1 style="margin: 0;">Detalle de Encuesta #<?php echo esc_html( $sub['id'] ); ?> — <?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></h1>
-                </div>
-                <div>
-                    <button onclick="window.print();" class="button"><span class="dashicons dashicons-printer" style="vertical-align: middle;"></span> Imprimir</button>
-                    <a href="<?php echo esc_url( $delete_url ); ?>" class="button button-link-delete" onclick="return confirm('¿Estás seguro de eliminar este registro?');">Eliminar Registro</a>
-                </div>
-            </div>
+            <h1 class="wp-heading-inline">Detalle de Encuesta #<?php echo esc_html( $sub['id'] ); ?></h1>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="button" style="margin-left: 10px;">← Volver al Listado</a>
+            <hr class="wp-header-end">
 
-            <!-- Ficha de Datos Generales -->
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 25px; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <h3 style="margin-top: 0; color: #381e72; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">
-                    <span class="dashicons dashicons-id-alt" style="margin-right: 5px;"></span> Datos de la Paciente y Perfil
-                </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Nombre Completo:</strong>
-                        <div style="font-size: 16px; font-weight: 600; color: #1e293b;"><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Edad Actual:</strong>
-                        <div style="font-size: 15px; color: #1e293b;"><?php echo esc_html( $sub['age'] ); ?> años</div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Celular:</strong>
-                        <div style="font-size: 15px; color: #1e293b;"><a href="tel:<?php echo esc_attr( $sub['phone'] ); ?>">📞 <?php echo esc_html( $sub['phone'] ); ?></a></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Correo Electrónico:</strong>
-                        <div style="font-size: 15px; color: #1e293b;"><a href="mailto:<?php echo esc_attr( $sub['email'] ); ?>"><?php echo esc_html( $sub['email'] ); ?></a></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Región de Residencia:</strong>
-                        <div style="font-size: 15px; font-weight: 600; color: #381e72;"><?php echo esc_html( $sub['region'] ); ?></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">¿Paciente Actual de Cáncer?:</strong>
-                        <div style="font-size: 15px; color: #1e293b;"><?php echo esc_html( $sub['is_current_patient'] ); ?></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Sistema de Salud:</strong>
-                        <div style="font-size: 15px; color: #1e293b;"><?php echo esc_html( $sub['health_system'] ); ?></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Edad al Diagnóstico:</strong>
-                        <div style="font-size: 15px; color: #1e293b;"><?php echo esc_html( $sub['age_diagnosis'] ); ?></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Fecha de Envío:</strong>
-                        <div style="font-size: 14px; color: #64748b;"><?php echo esc_html( date_i18n( 'd/m/Y H:i:s', strtotime( $sub['created_at'] ) ) ); ?></div>
-                    </div>
-                    <div>
-                        <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Consentimiento de Datos:</strong>
-                        <div><span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">✓ Autorizado</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Secciones con las 38 Preguntas -->
-            <?php foreach ( $sections as $sec_title => $questions ) : ?>
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 25px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <h3 style="margin-top: 0; color: #381e72; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 16px;">
-                        <?php echo esc_html( $sec_title ); ?>
-                    </h3>
-                    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 15px;">
-                        <?php foreach ( $questions as $q_key => $q_title ) : ?>
-                            <?php 
-                            $ans = isset( $responses[ $q_key ] ) && '' !== $responses[ $q_key ] ? $responses[ $q_key ] : null;
-                            ?>
-                            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px;">
-                                <div style="font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 6px;">
-                                    <?php echo esc_html( $q_title ); ?>
-                                </div>
-                                <div style="font-size: 15px; color: #381e72; font-weight: 600;">
-                                    <?php if ( null !== $ans ) : ?>
-                                        <span style="background: #f3effc; border: 1px solid #d8b4fe; padding: 4px 10px; border-radius: 4px; display: inline-block;">
-                                            <?php echo esc_html( $ans ); ?>
-                                        </span>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 20px;">
+                <!-- Datos Generales -->
+                <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <h3 style="margin-top: 0; border-bottom: 2px solid #381e72; padding-bottom: 8px; color: #381e72;">Datos del Paciente</h3>
+                    <table class="widefat" style="border: none;">
+                        <tbody>
+                            <tr><td><strong>Nombres:</strong></td><td><?php echo esc_html( $sub['first_name'] ); ?></td></tr>
+                            <tr><td><strong>Apellidos:</strong></td><td><?php echo esc_html( $sub['last_name'] ); ?></td></tr>
+                            <tr><td><strong>Edad:</strong></td><td><?php echo esc_html( $sub['age'] ); ?> años</td></tr>
+                            <tr><td><strong>Celular:</strong></td><td><?php echo esc_html( $sub['phone'] ); ?></td></tr>
+                            <tr><td><strong>Correo:</strong></td><td><?php echo esc_html( $sub['email'] ); ?></td></tr>
+                            <tr><td><strong>Región:</strong></td><td><?php echo esc_html( $sub['region'] ); ?></td></tr>
+                            <tr><td><strong>Paciente Actual:</strong></td><td><?php echo esc_html( $sub['is_current_patient'] ); ?></td></tr>
+                            <tr><td><strong>Sistema Salud:</strong></td><td><?php echo esc_html( $sub['health_system'] ); ?></td></tr>
+                            <tr><td><strong>Edad Diag.:</strong></td><td><?php echo esc_html( $sub['age_diagnosis'] ); ?></td></tr>
+                            <tr><td><strong>Fecha:</strong></td><td><?php echo esc_html( $sub['created_at'] ); ?></td></tr>
+                            <tr>
+                                <td><strong>Google Sheets:</strong></td>
+                                <td>
+                                    <?php if ( ! empty( $sub['synced_to_sheets'] ) ) : ?>
+                                        <span style="color: #10b981; font-weight: 600;">✓ Sincronizado</span> (<?php echo esc_html( $sub['synced_at'] ); ?>)
                                     <?php else : ?>
-                                        <span style="color: #94a3b8; font-style: italic; font-weight: normal; font-size: 13px;">(No aplica o no respondida)</span>
+                                        <a href="<?php echo esc_url( $sync_url ); ?>" class="button button-small">Sincronizar a Google Sheets</a>
                                     <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            <?php endforeach; ?>
+
+                <!-- Respuestas del Cuestionario -->
+                <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <h3 style="margin-top: 0; border-bottom: 2px solid #d81b60; padding-bottom: 8px; color: #d81b60;">Respuestas del Cuestionario</h3>
+                    
+                    <table class="widefat striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 45%;">Pregunta</th>
+                                <th>Respuesta</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $questions_map as $key => $label ) : ?>
+                                <?php
+                                $val = $responses[ $key ] ?? '<em style="color:#94a3b8;">No respondida</em>';
+                                if ( is_array( $val ) ) {
+                                    $val = implode( ', ', $val );
+                                }
+                                ?>
+                                <tr>
+                                    <td><strong><?php echo esc_html( $label ); ?></strong></td>
+                                    <td><?php echo esc_html( (string) $val ); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         <?php
-    }
-
-    private function get_grouped_questions() {
-        return array(
-            'A. Lugar de Diagnóstico y Derivación' => array(
-                'q1_diag_place'            => '1. ¿Dónde fuiste diagnosticada con cáncer de mama?',
-                'q2_derivada_lima'         => '2. ¿Fuiste derivada a Lima para continuar tu atención por cáncer de mama?',
-                'q3_etapa_derivada'        => '3. ¿Para qué etapa de tu atención fuiste derivada a Lima?',
-                'q4_tiempo_atencion_lima'  => '4. Desde que te indicaron la derivación hasta que pudiste ser atendida en Lima, ¿cuánto tiempo pasó?',
-            ),
-            'B. Aparece una Señal' => array(
-                'q5_deteccion_inicial'             => '5. ¿Cómo se detectó inicialmente algo que podía indicar un problema en tu mama?',
-                'q6_tiempo_hasta_buscar_atencion' => '6. Después de identificar la señal, ¿cuánto tiempo pasó hasta que buscaste atención médica?',
-            ),
-            'C. Primera Atención' => array(
-                'q7_tiempo_primera_consulta'                => '7. Después de buscar atención, ¿cuánto tiempo pasó hasta tu primera consulta médica?',
-                'q8_tipo_establecimiento_primera_consulta' => '8. ¿En qué tipo de establecimiento fue tu primera consulta?',
-                'q9_solicitaron_examenes'                  => '9. ¿Te solicitaron exámenes para evaluar la mama?',
-            ),
-            'D. Exámenes Mamarios' => array(
-                'q10_examenes_solicitados'              => '10. ¿Qué exámenes te solicitaron?',
-                'q11_tiempo_hasta_realizar_examen'      => '11. Desde que te solicitaron el examen hasta que pudiste realizarlo, ¿cuánto tiempo pasó?',
-                'q12_tiempo_hasta_resultado_examen'     => '12. Desde que realizaste el examen hasta que recibiste el resultado, ¿cuánto tiempo pasó?',
-                'q13_dificultad_examenes'               => '13. ¿Tuviste alguna dificultad para realizar los exámenes?',
-                'q14_principal_dificultad_examenes'     => '14. ¿Cuál fue la principal dificultad?',
-            ),
-            'E. Derivación a Otro Establecimiento' => array(
-                'q15_derivaron_otro_establecimiento' => '15. ¿Te derivaron a otro establecimiento o especialista?',
-                'q16_tiempo_atencion_derivacion'     => '16. Si te derivaron, ¿cuánto tiempo pasó hasta que lograste ser atendida?',
-                'q17_cambio_sistema'                 => '17. ¿La derivación implicó pasar de un sistema de atención a otro?',
-            ),
-            'F. Biopsia y Confirmación del Diagnóstico' => array(
-                'q18_indicaron_biopsia'               => '18. ¿Te indicaron una biopsia para confirmar el diagnóstico?',
-                'q19_tiempo_hasta_realizar_biopsia'  => '19. Desde que te indicaron la biopsia hasta que se realizó, ¿cuánto tiempo pasó?',
-                'q20_tiempo_resultado_biopsia'        => '20. Desde que se realizó la biopsia hasta que recibiste el resultado, ¿cuánto tiempo pasó?',
-                'q21_establecimiento_biopsia'         => '21. ¿En qué tipo de establecimiento se realizó principalmente la biopsia?',
-            ),
-            'G. Tipo de Cáncer de Mama y H. Estadio' => array(
-                'q22_informaron_subtipo'        => '22. ¿Te informaron qué subtipo de cáncer de mama tenías?',
-                'q23_subtipo_indicado'          => '23. Si te informaron el subtipo, ¿cuál te indicaron?',
-                'q24_estadio_detectado'         => '24. ¿En qué estadio te detectaron el cáncer de mama?',
-                'q25_tiempo_estudios_estadio'   => '25. ¿Cuánto tiempo pasó desde la confirmación del diagnóstico hasta que se completaron los estudios para determinar el estadio?',
-                'q26_estadio_diferente'         => '26. Cuándo inició tu primer tratamiento, ¿te informaron de un estadio diferente al que te habían indicado inicialmente?',
-                'q27_estadio_inicio_tratamiento' => '27. Si respondiste “Sí”, ¿qué estadio te informaron al inicio del tratamiento?',
-            ),
-            'I. Inicio del Tratamiento' => array(
-                'q28_tratamiento_inicial'                  => '28. ¿Qué tratamiento te indicaron inicialmente?',
-                'q29_tiempo_confirmacion_a_indicacion'     => '29. Desde que recibiste la confirmación del diagnóstico hasta que te indicaron el tratamiento, ¿cuánto tiempo pasó?',
-                'q30_tiempo_indicacion_a_inicio'           => '30. Desde que te indicaron el tratamiento hasta que efectivamente lo iniciaste, ¿cuánto tiempo pasó?',
-                'q31_lugar_inicio_tratamiento'             => '31. ¿Dónde iniciaste principalmente tu tratamiento?',
-            ),
-            'J. Barreras, Experiencia y Consentimiento' => array(
-                'q32_etapa_mayor_espera'                   => '32. ¿En qué etapa sentiste que tuviste que esperar más?',
-                'q33_principal_dificultad_recorrido'       => '33. ¿Cuál fue la principal dificultad que enfrentaste durante tu recorrido?',
-                'q34_acudio_privado_rapidez'               => '34. ¿En algún momento tuviste que acudir a un establecimiento privado para poder avanzar más rápido en alguna etapa?',
-                'q35_demora_retraso_tratamiento'           => '35. Durante tu recorrido, ¿sentiste que la demora en tu atención retrasó el inicio de tu tratamiento?',
-                'q36_tiempo_total_recorrido'               => '36. Pensando en todo tu recorrido, desde la primera señal hasta el inicio de tu primer tratamiento, ¿cuánto tiempo pasó aproximadamente?',
-                'q37_informacion_clara_siguiente_paso'     => '37. Durante tu recorrido, ¿recibiste información clara sobre cuál era el siguiente paso de tu atención?',
-                'q38_tratamiento_innovador_no_cubierto'    => '38. ¿Algún médico le indicó que existe un tratamiento innovador que el sistema o su seguro no cubre?',
-            ),
-        );
-    }
-
-    private function get_questions_map() {
-        $flat = array();
-        foreach ( $this->get_grouped_questions() as $group => $questions ) {
-            foreach ( $questions as $key => $title ) {
-                $flat[ $key ] = $title;
-            }
-        }
-        return $flat;
     }
 }

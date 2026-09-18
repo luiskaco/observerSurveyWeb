@@ -25,6 +25,8 @@ class Activator {
             health_system VARCHAR(100) DEFAULT NULL,
             age_diagnosis VARCHAR(50) DEFAULT NULL,
             responses_json LONGTEXT NOT NULL,
+            synced_to_sheets TINYINT(1) NOT NULL DEFAULT 0,
+            synced_at DATETIME DEFAULT NULL,
             ip_address VARCHAR(45) DEFAULT NULL,
             user_agent VARCHAR(255) DEFAULT NULL,
             status VARCHAR(20) NOT NULL DEFAULT 'completed',
@@ -33,6 +35,7 @@ class Activator {
             PRIMARY KEY (id),
             KEY idx_survey_type (survey_type),
             KEY idx_email (email),
+            KEY idx_synced (synced_to_sheets),
             KEY idx_created_at (created_at)
         ) $charset_collate;";
 

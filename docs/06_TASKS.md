@@ -15,7 +15,11 @@
 - [x] Implementar `survey-wizard.js` (navegación multi-step, validación por campo/sección, barra de progreso).
 - [x] Implementar Sección 1 a 6 con las 38 preguntas completas y lógica condicional.
 
-## Fase 4: Panel Admin y Exportación
+## Fase 4: Panel Admin, Exportación y Google Sheets
 - [x] Crear menú y panel en WP Admin para listar respuestas.
 - [x] Implementar exportador de datos en formato CSV/Excel.
-- [ ] Pruebas end-to-end de envío, validación y seguridad.
+- [x] Integración nativa con Google Sheets API v4 (Service Account OAuth2 JWT).
+- [x] Panel de configuración de Google Sheets con prueba de conexión en WP Admin.
+- [x] Sincronización automática en tiempo real de nuevas respuestas al enviar formulario.
+- [ ] Pruebas end-to-end de envío, validación y sincronización.
+
