@@ -81,7 +81,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                     <div class="obs-field-group">
                         <label for="phone">Celular <span class="req">*</span></label>
-                        <input type="tel" id="phone" name="phone" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="Ej. 987654321" required autocomplete="tel">
+                        <input type="tel" id="phone" name="phone" inputmode="numeric" maxlength="11" placeholder="Ej. 987 654 321" required autocomplete="tel">
                         <span class="obs-field-error"></span>
                     </div>
                 </div>

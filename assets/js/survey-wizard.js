@@ -121,18 +121,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const firstNameInput = document.getElementById('first_name');
         const lastNameInput = document.getElementById('last_name');
 
+        // Utilidad para convertir a Title Case
+        const toTitleCase = (str) => {
+            if (!str) return '';
+            return str.toLowerCase().replace(/(?:^|\s|[-'])\S/g, char => char.toUpperCase());
+        };
+
         // Campos numéricos (Solo dígitos)
         const applyNumericOnly = (input, maxLength) => {
             if (!input) return;
 
             // Bloquear teclas no numéricas
             input.addEventListener('keydown', (e) => {
-                // Permitir teclas de control: backspace, tab, delete, flechas, etc.
                 const allowedKeys = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'];
                 if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
                     return;
                 }
-                // Si no es un dígito del 0 al 9, bloquear
                 if (!/^[0-9]$/.test(e.key)) {
                     e.preventDefault();
                 }
@@ -148,14 +152,44 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        applyNumericOnly(ageInput, 3);
-        applyNumericOnly(phoneInput, 9);
+        // Teléfono: separación en bloques de 3 dígitos (ej: 333 333 333)
+        const applyPhoneMask = (input) => {
+            if (!input) return;
 
-        // Nombres y Apellidos (Solo letras, espacios, tildes y guiones)
+            input.addEventListener('keydown', (e) => {
+                const allowedKeys = ['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'];
+                if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+                    return;
+                }
+                if (!/^[0-9\s]$/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            input.addEventListener('input', function () {
+                let digits = this.value.replace(/\D/g, '').slice(0, 9);
+                let formatted = '';
+                for (let i = 0; i < digits.length; i++) {
+                    if (i > 0 && i % 3 === 0) {
+                        formatted += ' ';
+                    }
+                    formatted += digits[i];
+                }
+                this.value = formatted;
+            });
+        };
+
+        applyNumericOnly(ageInput, 3);
+        applyPhoneMask(phoneInput);
+
+        // Nombres y Apellidos (Solo letras, espacios, tildes y guiones) + Auto Title Case
         const applyTextOnly = (input) => {
             if (!input) return;
             input.addEventListener('input', function () {
                 this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]/g, '');
+            });
+            input.addEventListener('blur', function () {
+                this.value = toTitleCase(this.value.trim());
             });
         };
 
@@ -199,7 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         errorMessage = 'Ingresa una edad válida (entre 15 y 110 años).';
                     }
                 } else if (input.id === 'phone' && val) {
-                    if (val.length < 9) {
+                    const phoneDigits = val.replace(/\D/g, '');
+                    if (phoneDigits.length < 9) {
                         groupValid = false;
                         errorMessage = 'El número de celular debe tener 9 dígitos.';
                     }
@@ -381,10 +416,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             survey_type: 'cancer_mama_journey',
             hp_field: formData.get('hp_field') || '',
-            first_name: formData.get('first_name') || '',
-            last_name: formData.get('last_name') || '',
+            first_name: toTitleCase((formData.get('first_name') || '').trim()),
+            last_name: toTitleCase((formData.get('last_name') || '').trim()),
             age: formData.get('age') || '',
-            phone: formData.get('phone') || '',
+            phone: (formData.get('phone') || '').trim(),
             email: formData.get('email') || '',
             region: formData.get('region') || '',
             is_current_patient: formData.get('is_current_patient') || '',

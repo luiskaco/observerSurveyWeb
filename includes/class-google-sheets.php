@@ -560,13 +560,32 @@ class Google_Sheets {
             $responses = json_decode( $submission['responses_json'], true ) ?: array();
         }
 
+        $first_name = $submission['first_name'] ?? '';
+        $last_name  = $submission['last_name'] ?? '';
+        $phone      = $submission['phone'] ?? '';
+
+        if ( class_exists( 'Observatorio\\Survey\\Rest_Controller' ) ) {
+            $first_name = Rest_Controller::format_title_case( $first_name );
+            $last_name  = Rest_Controller::format_title_case( $last_name );
+            $phone      = Rest_Controller::format_phone( $phone );
+        } else {
+            if ( function_exists( 'mb_convert_case' ) ) {
+                $first_name = mb_convert_case( trim( (string) $first_name ), MB_CASE_TITLE, 'UTF-8' );
+                $last_name  = mb_convert_case( trim( (string) $last_name ), MB_CASE_TITLE, 'UTF-8' );
+            }
+            $phone_digits = preg_replace( '/\D/', '', (string) $phone );
+            if ( ! empty( $phone_digits ) ) {
+                $phone = implode( ' ', str_split( $phone_digits, 3 ) );
+            }
+        }
+
         $row = array(
             $submission['id'] ?? '',
             $submission['created_at'] ?? current_time( 'mysql' ),
-            $submission['first_name'] ?? '',
-            $submission['last_name'] ?? '',
+            $first_name,
+            $last_name,
             $submission['age'] ?? '',
-            $submission['phone'] ?? '',
+            $phone,
             $submission['email'] ?? '',
             $submission['region'] ?? '',
             $submission['is_current_patient'] ?? '',

@@ -34,10 +34,11 @@ class Rest_Controller {
         }
 
         // 2. Extraer y sanitizar datos obligatorios
-        $first_name  = isset( $params['first_name'] ) ? sanitize_text_field( $params['first_name'] ) : '';
-        $last_name   = isset( $params['last_name'] ) ? sanitize_text_field( $params['last_name'] ) : '';
+        $first_name  = isset( $params['first_name'] ) ? self::format_title_case( sanitize_text_field( $params['first_name'] ) ) : '';
+        $last_name   = isset( $params['last_name'] ) ? self::format_title_case( sanitize_text_field( $params['last_name'] ) ) : '';
         $age         = isset( $params['age'] ) ? absint( $params['age'] ) : 0;
-        $phone       = isset( $params['phone'] ) ? sanitize_text_field( $params['phone'] ) : '';
+        $phone_raw   = isset( $params['phone'] ) ? sanitize_text_field( $params['phone'] ) : '';
+        $phone       = self::format_phone( $phone_raw );
         $email       = isset( $params['email'] ) ? sanitize_email( $params['email'] ) : '';
         $region      = isset( $params['region'] ) ? sanitize_text_field( $params['region'] ) : '';
         $is_patient  = isset( $params['is_current_patient'] ) ? sanitize_text_field( $params['is_current_patient'] ) : '';
@@ -57,8 +58,9 @@ class Rest_Controller {
         if ( empty( $age ) || $age < 10 || $age > 120 ) {
             $errors['age'] = 'Por favor ingrese una edad válida.';
         }
-        if ( empty( $phone ) ) {
-            $errors['phone'] = 'El celular es obligatorio.';
+        $phone_digits = preg_replace( '/\D/', '', $phone_raw );
+        if ( empty( $phone_digits ) || strlen( $phone_digits ) < 9 ) {
+            $errors['phone'] = 'El celular es obligatorio y debe tener al menos 9 dígitos.';
         }
         if ( empty( $email ) || ! is_email( $email ) ) {
             $errors['email'] = 'Por favor ingrese un correo electrónico válido.';
@@ -163,5 +165,34 @@ class Rest_Controller {
             $ip = $_SERVER['REMOTE_ADDR'];
         }
         return sanitize_text_field( $ip );
+    }
+
+    /**
+     * Convierte texto a Title Case respetando caracteres multibyte y acentos en español
+     */
+    public static function format_title_case( $string ) {
+        if ( empty( $string ) ) {
+            return '';
+        }
+        $string = trim( (string) $string );
+        if ( function_exists( 'mb_convert_case' ) ) {
+            return mb_convert_case( $string, MB_CASE_TITLE, 'UTF-8' );
+        }
+        return ucwords( strtolower( $string ) );
+    }
+
+    /**
+     * Formatea el teléfono/celular en bloques de 3 dígitos separados por espacio (ej. 333 333 333)
+     */
+    public static function format_phone( $phone ) {
+        if ( empty( $phone ) ) {
+            return '';
+        }
+        $digits = preg_replace( '/\D/', '', (string) $phone );
+        if ( empty( $digits ) ) {
+            return trim( (string) $phone );
+        }
+        $chunks = str_split( $digits, 3 );
+        return implode( ' ', $chunks );
     }
 }

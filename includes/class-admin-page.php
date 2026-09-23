@@ -190,13 +190,18 @@ class Admin_Page {
         if ( ! empty( $results ) ) {
             foreach ( $results as $row ) {
                 $responses = json_decode( $row['responses_json'], true ) ?: array();
+
+                $first_name = Rest_Controller::format_title_case( $row['first_name'] );
+                $last_name  = Rest_Controller::format_title_case( $row['last_name'] );
+                $phone      = Rest_Controller::format_phone( $row['phone'] );
+
                 $line = array(
                     $row['id'],
                     $row['created_at'],
-                    $row['first_name'],
-                    $row['last_name'],
+                    $first_name,
+                    $last_name,
                     $row['age'],
-                    $row['phone'],
+                    $phone,
                     $row['email'],
                     $row['region'],
                     $row['is_current_patient'],
