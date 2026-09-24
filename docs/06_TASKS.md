@@ -20,7 +20,12 @@
 - [x] Implementar exportador de datos en formato CSV/Excel.
 - [x] Integración nativa con Google Sheets API v4 (Service Account OAuth2 JWT).
 - [x] Panel de configuración de Google Sheets con prueba de conexión en WP Admin.
-- [x] Sincronización automática en tiempo real de nuevas respuestas al enviar formulario.
 ## Fase 5: Mejoras de Formato de Datos
 - [x] Formateo automático de Nombres y Apellidos en Title Case (Mayúscula inicial) con soporte UTF-8.
 - [x] Formateo de número de teléfono/celular separado en bloques de 3 dígitos (ej: 333 333 333) en Base de Datos, Google Sheets y CSV.
+
+## Fase 6: Corrección de Guardado y Sincronización
+- [x] fix: Resolver fallo de guardado en base de datos y envío a Google Sheets — causa: Restricción estricta de nonce wp_rest en endpoints públicos, URL REST inconsistente con query params y bloques condicionales con atributos required no ocultos inicialmente en el frontend.
+
+
+

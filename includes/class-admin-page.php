@@ -195,9 +195,11 @@ class Admin_Page {
                 $last_name  = Rest_Controller::format_title_case( $row['last_name'] );
                 $phone      = Rest_Controller::format_phone( $row['phone'] );
 
+                $formatted_date = Rest_Controller::format_date( $row['created_at'] );
+
                 $line = array(
                     $row['id'],
-                    $row['created_at'],
+                    $formatted_date,
                     $first_name,
                     $last_name,
                     $row['age'],
@@ -209,6 +211,7 @@ class Admin_Page {
                     $row['age_diagnosis'],
                     $row['consent_accepted'] ? 'Sí' : 'No',
                 );
+
 
                 foreach ( $questions_map as $key => $label ) {
                     $val = isset( $responses[ $key ] ) ? $responses[ $key ] : '';

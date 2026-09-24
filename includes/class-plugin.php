@@ -45,10 +45,11 @@ class Plugin {
         );
 
         wp_localize_script( 'obs-survey-script', 'obsSurveyConfig', array(
-            'apiUrl' => esc_url_raw( rest_url( 'observatorio/v1/survey' ) ),
+            'apiUrl' => esc_url_raw( rest_url( 'observatorio/v1/survey/submit' ) ),
             'nonce'  => wp_create_nonce( 'wp_rest' ),
         ) );
     }
+
 
     public function render_shortcode( $atts = array() ) {
         wp_enqueue_style( 'obs-survey-style' );

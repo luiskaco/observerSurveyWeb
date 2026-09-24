@@ -5,6 +5,21 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.3.1] - 2026-09-24
+
+### Fixed
+- **Endpoint REST Público:** Configurado `permission_callback` para permitir envíos públicos sin bloqueo por caducidad de nonces `wp_rest` en páginas con caché o usuarios anónimos, protegido por Honeypot anti-spam (`hp_field`).
+- **JavaScript Wizard (`survey-wizard.js`):** Corrección del scope de la función `toTitleCase` que impedía el submit, URL de endpoint inyectada directamente desde `wp_localize_script`, y validación dinámica de preguntas condicionales ignorando bloques ocultos con scroll automático hacia errores.
+- **Plantilla HTML (`survey-container.php`):** Ocultamiento estático y clase `.obs-conditional-block` en subpreguntas condicionales Q23 y Q27.
+
+
+### Added
+- **Formateo de Fecha de Registro:** La columna "Fecha Registro" ahora se formatea explícitamente en `DD/MM/YYYY HH:MM:SS` (ej. `24/09/2026 05:07:22`), evitando que Google Sheets la interprete como un número de serie decimal (`46285.77549`).
+
+### Changed
+- Actualización de versión del plugin a `1.3.0` para refresco automático de assets en producción / hosting.
+
+
 ## [1.2.0] - 2026-09-23
 
 ### Added

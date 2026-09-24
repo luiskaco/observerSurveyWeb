@@ -579,9 +579,17 @@ class Google_Sheets {
             }
         }
 
+        $raw_created    = $submission['created_at'] ?? current_time( 'mysql' );
+        $formatted_date = class_exists( 'Observatorio\\Survey\\Rest_Controller' )
+            ? Rest_Controller::format_date( $raw_created )
+            : ( strtotime( (string) $raw_created ) ? date( 'd/m/Y H:i:s', strtotime( (string) $raw_created ) ) : (string) $raw_created );
+
+        // Anteponer apóstrofe para que Google Sheets lo interprete como texto explícito formateado
+        $sheet_date = "'" . $formatted_date;
+
         $row = array(
             $submission['id'] ?? '',
-            $submission['created_at'] ?? current_time( 'mysql' ),
+            $sheet_date,
             $first_name,
             $last_name,
             $submission['age'] ?? '',
@@ -593,6 +601,7 @@ class Google_Sheets {
             $submission['age_diagnosis'] ?? '',
             ! empty( $submission['consent_accepted'] ) ? 'Sí' : 'No',
         );
+
 
         $questions_map = self::get_questions_map();
         foreach ( $questions_map as $key => $label ) {

@@ -20,6 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStep = 1;
     const totalSteps = steps.length;
 
+    // Utilidad para convertir texto a Title Case
+    const toTitleCase = (str) => {
+        if (!str) return '';
+        return str.toLowerCase().replace(/(?:^|\s|[-'])\S/g, char => char.toUpperCase());
+    };
+
     const stepTitles = {
         1: 'Paso 1 de 6: Antecedentes',
         2: 'Paso 2 de 6: Lugar de Diagnóstico y Derivación',
@@ -121,11 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const firstNameInput = document.getElementById('first_name');
         const lastNameInput = document.getElementById('last_name');
 
-        // Utilidad para convertir a Title Case
-        const toTitleCase = (str) => {
-            if (!str) return '';
-            return str.toLowerCase().replace(/(?:^|\s|[-'])\S/g, char => char.toUpperCase());
-        };
 
         // Campos numéricos (Solo dígitos)
         const applyNumericOnly = (input, maxLength) => {
@@ -203,11 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentStepEl) return true;
 
         let isValid = true;
+        let firstErrorGroup = null;
         const fieldGroups = currentStepEl.querySelectorAll('.obs-field-group, .obs-consent-card');
 
         fieldGroups.forEach(group => {
             // Ignorar grupos dentro de bloques condicionales ocultos
-            if (group.closest('.obs-conditional-block[style*="display: none"]') || group.style.display === 'none') {
+            const isHidden = group.style.display === 'none' || 
+                             (window.getComputedStyle(group).display === 'none') || 
+                             group.closest('.obs-conditional-block[style*="none"]') ||
+                             (group.closest('.obs-conditional-block') && window.getComputedStyle(group.closest('.obs-conditional-block')).display === 'none');
+
+            if (isHidden) {
                 clearFieldError(group);
                 return;
             }
@@ -228,9 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     errorMessage = 'Ingresa un correo electrónico válido (ej. usuario@dominio.com).';
                 } else if (input.id === 'age' && val) {
                     const ageNum = parseInt(val, 10);
-                    if (isNaN(ageNum) || ageNum < 15 || ageNum > 110) {
+                    if (isNaN(ageNum) || ageNum < 10 || ageNum > 120) {
                         groupValid = false;
-                        errorMessage = 'Ingresa una edad válida (entre 15 y 110 años).';
+                        errorMessage = 'Ingresa una edad válida (entre 10 y 120 años).';
                     }
                 } else if (input.id === 'phone' && val) {
                     const phoneDigits = val.replace(/\D/g, '');
@@ -265,10 +272,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 isValid = false;
                 group.classList.add('has-error');
                 if (errorSpan) errorSpan.textContent = errorMessage;
+                if (!firstErrorGroup) {
+                    firstErrorGroup = group;
+                }
             } else {
                 clearFieldError(group);
             }
         });
+
+        if (!isValid && firstErrorGroup) {
+            firstErrorGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         return isValid;
     }
@@ -448,15 +462,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (globalStatus) globalStatus.style.display = 'none';
 
         try {
-            const apiUrl = window.obsSurveyConfig ? window.obsSurveyConfig.apiUrl + '/submit' : '/wp-json/observatorio/v1/survey/submit';
+            const apiUrl = window.obsSurveyConfig && window.obsSurveyConfig.apiUrl 
+                ? window.obsSurveyConfig.apiUrl 
+                : '/wp-json/observatorio/v1/survey/submit';
             const nonce = window.obsSurveyConfig ? window.obsSurveyConfig.nonce : '';
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': nonce
-                },
+                headers: headers,
                 body: JSON.stringify(payload)
             });
 
@@ -476,6 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 successView.scrollIntoView({ behavior: 'smooth' });
             } else {
+                if (data.errors && typeof data.errors === 'object') {
+                    const firstErrorMsg = Object.values(data.errors)[0];
+                    throw new Error(firstErrorMsg || data.message || 'Por favor completa todos los campos requeridos.');
+                }
                 throw new Error(data.message || 'Ocurrió un error al enviar el formulario.');
             }
         } catch (error) {
@@ -483,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 globalStatus.textContent = error.message || 'Error de conexión. Por favor intenta nuevamente.';
                 globalStatus.className = 'obs-global-status error';
                 globalStatus.style.display = 'block';
+                globalStatus.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         } finally {
             btnSubmit.disabled = false;
@@ -490,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnText) btnText.textContent = 'ENVIAR ENCUESTA';
         }
     });
+
 
     // Iniciar
     setupConditionalLogic();

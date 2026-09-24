@@ -563,13 +563,13 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="obs-field-error"></span>
                 </div>
 
-                <div class="obs-field-group" id="block-q23">
+                <div class="obs-field-group obs-conditional-block" id="block-q23" style="display: none;">
                     <label>23. Si te informaron el subtipo, ¿cuál te indicaron? <span class="req">*</span></label>
                     <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="Luminal A/B u hormonal" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Luminal A/B u hormonal</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="HER2 positivo" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">HER2 positivo</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="Triple negativo" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Triple negativo</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="No me lo informaron" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No me lo informaron</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="Luminal A/B u hormonal"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Luminal A/B u hormonal</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="HER2 positivo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">HER2 positivo</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="Triple negativo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Triple negativo</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q23_subtipo_indicado" value="No me lo informaron"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No me lo informaron</span></span></label>
                     </div>
                     <span class="obs-field-error"></span>
                 </div>
@@ -613,15 +613,15 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="obs-field-error"></span>
                 </div>
 
-                <div class="obs-field-group" id="block-q27">
+                <div class="obs-field-group obs-conditional-block" id="block-q27" style="display: none;">
                     <label>27. Si respondiste “Sí”, ¿qué estadio te informaron al inicio del tratamiento? <span class="req">*</span></label>
                     <div class="obs-options-grid cols-3">
-                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio I" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio I</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio II" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio II</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio III" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio III</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio IV" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio IV</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="No recuerdo" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="No corresponde" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio I"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio I</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio II"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio II</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio III"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio III</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="Estadio IV"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Estadio IV</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="No recuerdo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q27_estadio_inicio_tratamiento" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
                     </div>
                     <span class="obs-field-error"></span>
                 </div>

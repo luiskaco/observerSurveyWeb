@@ -10,17 +10,10 @@ class Rest_Controller {
         register_rest_route( 'observatorio/v1', '/survey/submit', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'handle_submission' ),
-            'permission_callback' => array( $this, 'check_submit_permission' ),
+            'permission_callback' => '__return_true',
         ) );
     }
 
-    public function check_submit_permission( $request ) {
-        $nonce = $request->get_header( 'X-WP-Nonce' );
-        if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-            return new \WP_Error( 'rest_forbidden', __( 'Sesión expirada o nonce inválido. Por favor recarga la página.', 'observatorio-survey' ), array( 'status' => 403 ) );
-        }
-        return true;
-    }
 
     public function handle_submission( $request ) {
         $params = $request->get_json_params();
@@ -195,4 +188,20 @@ class Rest_Controller {
         $chunks = str_split( $digits, 3 );
         return implode( ' ', $chunks );
     }
+
+    /**
+     * Formatea la fecha en formato legible DD/MM/YYYY HH:MM:SS
+     */
+    public static function format_date( $date_string, $include_seconds = true ) {
+        if ( empty( $date_string ) ) {
+            return '';
+        }
+        $timestamp = strtotime( (string) $date_string );
+        if ( ! $timestamp ) {
+            return (string) $date_string;
+        }
+        $format = $include_seconds ? 'd/m/Y H:i:s' : 'd/m/Y H:i';
+        return date( $format, $timestamp );
+    }
 }
+
