@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     <!-- Header General -->
     <header class="obs-survey-header">
         <div class="obs-badge">ENCUESTA PACIENTES DE CÁNCER DE MAMA</div>
-        <h1 class="obs-main-title">EL VIAJE DE LA PACIENTE CON CÁNCER DE MAMA</h1>
+        <h1 class="obs-main-title">LA RUTA DE LA PACIENTE CON CÁNCER DE MAMA</h1>
         <p class="obs-subtitle">Del primer signo al inicio del tratamiento</p>
         <div class="obs-decorative-bars">
             <span></span>

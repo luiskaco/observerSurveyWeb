@@ -257,7 +257,7 @@ class Admin_Page {
         $gsheets_config = Google_Sheets::get_config();
         ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">Encuestas: El Viaje de la Paciente con Cáncer de Mama</h1>
+            <h1 class="wp-heading-inline">Encuestas: La Ruta de la Paciente con Cáncer de Mama</h1>
             
             <a href="<?php echo esc_url( $export_url ); ?>" class="button button-primary" style="margin-left: 10px; background: #381e72; border-color: #2a1458;">
                 <span class="dashicons dashicons-download" style="vertical-align: middle; margin-top: -2px;"></span> Exportar Todo a CSV

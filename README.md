@@ -1,4 +1,4 @@
-# Observatorio Survey — El Viaje de la Paciente con Cáncer de Mama
+# Observatorio Survey — La Ruta de la Paciente con Cáncer de Mama
 
 Plugin nativo y modular de WordPress desarrollado para el **Observatorio de Por Un Perú Sin Cáncer**, diseñado para recopilar y analizar los tiempos de espera y barreras en la atención oncológica en el Perú.
 
