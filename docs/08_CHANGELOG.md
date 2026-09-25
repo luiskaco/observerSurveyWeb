@@ -5,6 +5,12 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.3.2] - 2026-09-25
+
+### Changed
+- Actualización de título general a **"LA RUTA DE LA PACIENTE CON CÁNCER DE MAMA"** en el template público, encabezados de administración y documentación.
+- Incremento de versión a `1.3.2` para despliegue y reemplazo en hosting.
+
 ## [1.3.1] - 2026-09-24
 
 ### Fixed
