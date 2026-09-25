@@ -5,6 +5,12 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-09-25
+
+### Changed
+- **Reordenamiento del Wizard Multi-Paso:** Se trasladó la sección de Antecedentes y Datos de Contacto (Nombres, Apellidos, Edad, Celular, Correo, Región, Paciente actual, Sistema de Salud y Consentimiento) al **Paso 6 (Paso Final)** para optimizar la tasa de completitud, iniciando directamente con las preguntas temáticas sobre el recorrido oncológico (Paso 1: Lugar de Diagnóstico y Derivación).
+- La estructura, orden de columnas y compatibilidad con Base de Datos, Google Sheets y exportación CSV se mantiene 100% intacta.
+
 ## [1.3.2] - 2026-09-25
 
 ### Changed

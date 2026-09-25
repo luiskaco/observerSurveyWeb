@@ -27,5 +27,5 @@
 ## Fase 6: Corrección de Guardado y Sincronización
 - [x] fix: Resolver fallo de guardado en base de datos y envío a Google Sheets — causa: Restricción estricta de nonce wp_rest en endpoints públicos, URL REST inconsistente con query params y bloques condicionales con atributos required no ocultos inicialmente en el frontend.
 
-
-
+## Fase 7: Reordenamiento de Flujo UX
+- [x] Trasladar el paso de Antecedentes y Consentimiento al Paso 6 (Final) para mejorar la conversión del formulario, manteniendo la persistencia e integridad de datos en BD y Google Sheets/CSV.

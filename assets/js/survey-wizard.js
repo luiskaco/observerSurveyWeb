@@ -27,12 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const stepTitles = {
-        1: 'Paso 1 de 6: Antecedentes',
-        2: 'Paso 2 de 6: Lugar de Diagnóstico y Derivación',
-        3: 'Paso 3 de 6: Primera Señal y Consulta',
-        4: 'Paso 4 de 6: Exámenes y Derivación',
-        5: 'Paso 5 de 6: Biopsia y Estadio',
-        6: 'Paso 6 de 6: Tratamiento y Experiencia',
+        1: 'Paso 1 de 6: Lugar de Diagnóstico y Derivación',
+        2: 'Paso 2 de 6: Primera Señal y Consulta',
+        3: 'Paso 3 de 6: Exámenes y Derivación',
+        4: 'Paso 4 de 6: Biopsia y Estadio',
+        5: 'Paso 5 de 6: Tratamiento y Recorrido',
+        6: 'Paso 6 de 6: Antecedentes y Consentimiento',
     };
 
     // --- Lógica Condicional ---

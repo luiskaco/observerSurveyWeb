@@ -3,7 +3,7 @@
  * Plugin Name:       Observatorio Survey
  * Plugin URI:        https://observatoriodelcancer.pe
  * Description:       Módulo interactivo de encuestas multi-paso para la ruta de la paciente oncológica en el Perú.
- * Version:           1.3.2
+ * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Observatorio de Por Un Perú Sin Cáncer
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-define( 'OBS_SURVEY_VERSION', '1.3.2' );
+define( 'OBS_SURVEY_VERSION', '1.4.0' );
 
 
 
