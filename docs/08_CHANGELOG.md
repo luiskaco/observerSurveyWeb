@@ -5,6 +5,11 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.6.2] - 2026-09-28
+
+### Fixed
+- **Escape HTML en Respuestas No Contestadas:** Se corrigió el renderizado de la etiqueta `<em>` en la vista de detalle de encuestas del panel de administración (`class-admin-page.php`), mostrando el texto en cursiva atenuada en lugar del código HTML literal.
+
 ## [1.6.1] - 2026-09-28
 
 ### Fixed

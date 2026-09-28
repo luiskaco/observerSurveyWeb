@@ -789,14 +789,21 @@ class Admin_Page {
                         <tbody>
                             <?php foreach ( $questions_map as $key => $label ) : ?>
                                 <?php
-                                $val = $responses[ $key ] ?? '<em style="color:#94a3b8;">No respondida</em>';
+                                $has_val = isset( $responses[ $key ] ) && '' !== trim( (string) ( is_array( $responses[ $key ] ) ? implode( '', $responses[ $key ] ) : $responses[ $key ] ) );
+                                $val     = $has_val ? $responses[ $key ] : '';
                                 if ( is_array( $val ) ) {
                                     $val = implode( ', ', $val );
                                 }
                                 ?>
                                 <tr>
                                     <td><strong><?php echo esc_html( $label ); ?></strong></td>
-                                    <td><?php echo esc_html( (string) $val ); ?></td>
+                                    <td>
+                                        <?php if ( $has_val ) : ?>
+                                            <?php echo esc_html( (string) $val ); ?>
+                                        <?php else : ?>
+                                            <em style="color: #94a3b8;">No respondida</em>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
