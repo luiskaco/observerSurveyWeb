@@ -30,16 +30,35 @@ class Activator {
             ip_address VARCHAR(45) DEFAULT NULL,
             user_agent VARCHAR(255) DEFAULT NULL,
             status VARCHAR(20) NOT NULL DEFAULT 'completed',
+            last_step_reached TINYINT UNSIGNED NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY (id),
             KEY idx_survey_type (survey_type),
             KEY idx_email (email),
+            KEY idx_status (status),
             KEY idx_synced (synced_to_sheets),
             KEY idx_created_at (created_at)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta( $sql );
+    }
+
+    public static function maybe_upgrade() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'obs_survey_submissions';
+
+        // Verificar si la tabla existe
+        if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) ) !== $table_name ) {
+            self::activate();
+            return;
+        }
+
+        // Verificar si existe la columna last_step_reached
+        $column = $wpdb->get_results( "SHOW COLUMNS FROM {$table_name} LIKE 'last_step_reached'" );
+        if ( empty( $column ) ) {
+            $wpdb->query( "ALTER TABLE {$table_name} ADD COLUMN last_step_reached TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER status" );
+        }
     }
 }

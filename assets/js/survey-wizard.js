@@ -362,24 +362,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    btnNext.addEventListener('click', () => {
-        if (validateStep(currentStep)) {
-            if (currentStep < totalSteps) {
-                currentStep++;
-                updateWizardUI();
-            }
-        }
-    });
-
-    btnPrev.addEventListener('click', () => {
-        if (currentStep > 1) {
-            currentStep--;
-            updateWizardUI();
-        }
-    });
-
-    // --- Persistencia de Borrador (localStorage) ---
+    // --- Persistencia de Borrador y Autosave Progresivo ---
     const STORAGE_KEY = 'obs_survey_mama_draft';
+    const SUBMISSION_ID_KEY = 'obs_survey_submission_id';
+    let currentSubmissionId = localStorage.getItem(SUBMISSION_ID_KEY) || null;
 
     function saveDraft() {
         const formData = new FormData(form);
@@ -417,6 +403,83 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {}
     }
 
+    /**
+     * Guarda el progreso del paso completado en segundo plano sin bloquear la UI
+     */
+    function saveStepProgress(stepNumber) {
+        const formData = new FormData(form);
+        const payload = {
+            survey_type: 'cancer_mama_journey',
+            step: stepNumber,
+            submission_id: currentSubmissionId ? parseInt(currentSubmissionId, 10) : null,
+            hp_field: formData.get('hp_field') || '',
+            first_name: toTitleCase((formData.get('first_name') || '').trim()),
+            last_name: toTitleCase((formData.get('last_name') || '').trim()),
+            age: formData.get('age') || '',
+            phone: (formData.get('phone') || '').trim(),
+            email: formData.get('email') || '',
+            region: formData.get('region') || '',
+            is_current_patient: formData.get('is_current_patient') || '',
+            health_system: formData.get('health_system') || '',
+            age_diagnosis: formData.get('age_diagnosis') || '',
+            responses: {}
+        };
+
+        formData.forEach((val, key) => {
+            if (![
+                'hp_field', 'first_name', 'last_name', 'age', 'phone', 
+                'email', 'region', 'is_current_patient', 'health_system', 
+                'age_diagnosis', 'consent_accepted'
+            ].includes(key)) {
+                payload.responses[key] = val;
+            }
+        });
+
+        const stepSaveUrl = window.obsSurveyConfig && window.obsSurveyConfig.stepSaveUrl 
+            ? window.obsSurveyConfig.stepSaveUrl 
+            : '/wp-json/observatorio/v1/survey/step-save';
+        const nonce = window.obsSurveyConfig ? window.obsSurveyConfig.nonce : '';
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (nonce) headers['X-WP-Nonce'] = nonce;
+
+        fetch(stepSaveUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.status === 'success' && data.submission_id) {
+                currentSubmissionId = data.submission_id;
+                try {
+                    localStorage.setItem(SUBMISSION_ID_KEY, data.submission_id);
+                } catch (e) {}
+            }
+        })
+        .catch(err => {
+            console.warn('[Observatorio Survey Autosave] Step save error (silently recovered):', err);
+        });
+    }
+
+    btnNext.addEventListener('click', () => {
+        if (validateStep(currentStep)) {
+            const stepCompleted = currentStep;
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateWizardUI();
+                saveStepProgress(stepCompleted);
+            }
+        }
+    });
+
+    btnPrev.addEventListener('click', () => {
+        if (currentStep > 1) {
+            currentStep--;
+            updateWizardUI();
+        }
+    });
+
     // --- Envío del Formulario (AJAX / REST API) ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -429,6 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const payload = {
             survey_type: 'cancer_mama_journey',
+            submission_id: currentSubmissionId ? parseInt(currentSubmissionId, 10) : null,
             hp_field: formData.get('hp_field') || '',
             first_name: toTitleCase((formData.get('first_name') || '').trim()),
             last_name: toTitleCase((formData.get('last_name') || '').trim()),
@@ -483,8 +547,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok && data.status === 'success') {
-                // Borrar borrador
-                try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                // Borrar borrador y submission_id
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                    localStorage.removeItem(SUBMISSION_ID_KEY);
+                } catch (e) {}
+                currentSubmissionId = null;
 
                 // Ocultar form y mostrar éxito
                 form.style.display = 'none';
@@ -515,7 +583,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnText) btnText.textContent = 'ENVIAR ENCUESTA';
         }
     });
-
 
     // Iniciar
     setupConditionalLogic();

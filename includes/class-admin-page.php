@@ -54,10 +54,11 @@ class Admin_Page {
             check_admin_referer( 'obs_save_gsheets_action', 'obs_gsheets_nonce' );
 
             $data = array(
-                'enabled'        => isset( $_POST['enabled'] ) ? 1 : 0,
-                'spreadsheet_id' => sanitize_text_field( $_POST['spreadsheet_id'] ?? '' ),
-                'sheet_name'     => sanitize_text_field( $_POST['sheet_name'] ?? 'Respuestas' ),
-                'credentials'    => ! empty( $_POST['credentials'] ) ? wp_unslash( $_POST['credentials'] ) : '',
+                'enabled'               => isset( $_POST['enabled'] ) ? 1 : 0,
+                'spreadsheet_id'        => sanitize_text_field( $_POST['spreadsheet_id'] ?? '' ),
+                'sheet_name'            => sanitize_text_field( $_POST['sheet_name'] ?? 'Completo' ),
+                'sheet_name_incomplete' => sanitize_text_field( $_POST['sheet_name_incomplete'] ?? 'Incompleto' ),
+                'credentials'           => ! empty( $_POST['credentials'] ) ? wp_unslash( $_POST['credentials'] ) : '',
             );
 
             Google_Sheets::save_config( $data );
@@ -72,7 +73,8 @@ class Admin_Page {
         // Exportar CSV
         if ( isset( $_GET['action'] ) && 'export_csv' === $_GET['action'] ) {
             check_admin_referer( 'obs_export_csv_action', 'obs_export_nonce' );
-            $this->export_csv();
+            $status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( $_GET['status_filter'] ) : 'all';
+            $this->export_csv( $status_filter );
         }
 
         // Eliminar Registro
@@ -124,7 +126,7 @@ class Admin_Page {
         }
 
         $spreadsheet_id = sanitize_text_field( $_POST['spreadsheet_id'] ?? '' );
-        $sheet_name     = sanitize_text_field( $_POST['sheet_name'] ?? 'Respuestas' );
+        $sheet_name     = sanitize_text_field( $_POST['sheet_name'] ?? 'Completo' );
 
         $result = Google_Sheets::test_connection( $spreadsheet_id, $sheet_name );
         if ( $result['success'] ) {
@@ -148,12 +150,20 @@ class Admin_Page {
         wp_send_json_success( $result );
     }
 
-    private function export_csv() {
+    private function export_csv( $status_filter = 'all' ) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'obs_survey_submissions';
-        $results = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY id DESC", ARRAY_A );
+        
+        $where = "WHERE 1=1";
+        if ( 'completed' === $status_filter ) {
+            $where .= " AND status = 'completed'";
+        } elseif ( 'in_progress' === $status_filter ) {
+            $where .= " AND status = 'in_progress'";
+        }
 
-        $filename = 'encuestas_cancer_mama_' . gmdate( 'Y-m-d_His' ) . '.csv';
+        $results = $wpdb->get_results( "SELECT * FROM $table_name $where ORDER BY id DESC", ARRAY_A );
+
+        $filename = 'encuestas_cancer_mama_' . ( 'all' !== $status_filter ? $status_filter . '_' : '' ) . gmdate( 'Y-m-d_His' ) . '.csv';
 
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename=' . $filename );
@@ -169,6 +179,8 @@ class Admin_Page {
         $headers = array(
             'ID',
             'Fecha Registro',
+            'Estado',
+            'Último Paso',
             'Nombres',
             'Apellidos',
             'Edad',
@@ -196,10 +208,14 @@ class Admin_Page {
                 $phone      = Rest_Controller::format_phone( $row['phone'] );
 
                 $formatted_date = Rest_Controller::format_date( $row['created_at'] );
+                $estado_label   = ( 'completed' === $row['status'] ) ? 'Completa' : 'Incompleta';
+                $ultimo_paso    = 'Paso ' . ( $row['last_step_reached'] ?? 1 );
 
                 $line = array(
                     $row['id'],
                     $formatted_date,
+                    $estado_label,
+                    $ultimo_paso,
                     $first_name,
                     $last_name,
                     $row['age'],
@@ -211,7 +227,6 @@ class Admin_Page {
                     $row['age_diagnosis'],
                     $row['consent_accepted'] ? 'Sí' : 'No',
                 );
-
 
                 foreach ( $questions_map as $key => $label ) {
                     $val = isset( $responses[ $key ] ) ? $responses[ $key ] : '';
@@ -238,29 +253,43 @@ class Admin_Page {
         global $wpdb;
         $table_name = $wpdb->prefix . 'obs_survey_submissions';
 
+        $status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( $_GET['status_filter'] ) : 'all';
         $search = isset( $_GET['s'] ) ? sanitize_text_field( trim( $_GET['s'] ) ) : '';
+        
         $where = "WHERE 1=1";
+        if ( 'completed' === $status_filter ) {
+            $where .= " AND status = 'completed'";
+        } elseif ( 'in_progress' === $status_filter ) {
+            $where .= " AND status = 'in_progress'";
+        }
+
         if ( ! empty( $search ) ) {
             $like = '%' . $wpdb->esc_like( $search ) . '%';
             $where .= $wpdb->prepare( " AND (first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR phone LIKE %s OR region LIKE %s)", $like, $like, $like, $like, $like );
         }
 
-        $total_submissions = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name $where" );
-        $unsynced_count    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE synced_to_sheets = 0" );
+        // Conteos globales
+        $count_all        = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
+        $count_completed  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'completed'" );
+        $count_in_prog    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'in_progress'" );
+        $unsynced_count   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE synced_to_sheets = 0" );
+
+        $total_filtered   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name $where" );
         $paged = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
         $limit = 20;
         $offset = ( $paged - 1 ) * $limit;
-        $total_pages = ceil( $total_submissions / $limit );
+        $total_pages = ceil( $total_filtered / $limit );
 
         $submissions = $wpdb->get_results( "SELECT * FROM $table_name $where ORDER BY id DESC LIMIT $limit OFFSET $offset", ARRAY_A );
-        $export_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=export_csv' ), 'obs_export_csv_action', 'obs_export_nonce' );
+        
+        $export_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=export_csv&status_filter=' . $status_filter ), 'obs_export_csv_action', 'obs_export_nonce' );
         $gsheets_config = Google_Sheets::get_config();
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Encuestas: La Ruta de la Paciente con Cáncer de Mama</h1>
             
             <a href="<?php echo esc_url( $export_url ); ?>" class="button button-primary" style="margin-left: 10px; background: #381e72; border-color: #2a1458;">
-                <span class="dashicons dashicons-download" style="vertical-align: middle; margin-top: -2px;"></span> Exportar Todo a CSV
+                <span class="dashicons dashicons-download" style="vertical-align: middle; margin-top: -2px;"></span> Exportar CSV (<?php echo esc_html( 'completed' === $status_filter ? 'Completas' : ( 'in_progress' === $status_filter ? 'Incompletas' : 'Todo' ) ); ?>)
             </a>
 
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-survey-gsheets' ) ); ?>" class="button" style="margin-left: 5px;">
@@ -279,14 +308,25 @@ class Admin_Page {
                 <div class="notice notice-error is-dismissible"><p>Error al sincronizar con Google Sheets: <?php echo esc_html( urldecode( $_GET['sync_error'] ) ); ?></p></div>
             <?php endif; ?>
 
+            <!-- Tarjetas de métricas -->
             <div style="margin: 20px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <div style="display: flex; gap: 15px;">
-                    <div style="background: #fff; padding: 14px 22px; border-radius: 8px; border-left: 4px solid #381e72; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Encuestas</div>
-                        <div style="font-size: 24px; font-weight: bold; color: #381e72; margin-top: 2px;"><?php echo esc_html( $total_submissions ); ?></div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="background: #fff; padding: 14px 20px; border-radius: 8px; border-left: 4px solid #381e72; box-shadow: 0 1px 3px rgba(0,0,0,0.06); min-width: 120px;">
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Registros</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #381e72; margin-top: 2px;"><?php echo esc_html( $count_all ); ?></div>
                     </div>
 
-                    <div style="background: #fff; padding: 14px 22px; border-radius: 8px; border-left: 4px solid <?php echo ! empty( $gsheets_config['enabled'] ) ? '#10b981' : '#f59e0b'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                    <div style="background: #fff; padding: 14px 20px; border-radius: 8px; border-left: 4px solid #10b981; box-shadow: 0 1px 3px rgba(0,0,0,0.06); min-width: 120px;">
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Completadas</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #059669; margin-top: 2px;"><?php echo esc_html( $count_completed ); ?></div>
+                    </div>
+
+                    <div style="background: #fff; padding: 14px 20px; border-radius: 8px; border-left: 4px solid #f59e0b; box-shadow: 0 1px 3px rgba(0,0,0,0.06); min-width: 120px;">
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Incompletas (Paso 1-5)</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #d97706; margin-top: 2px;"><?php echo esc_html( $count_in_prog ); ?></div>
+                    </div>
+
+                    <div style="background: #fff; padding: 14px 20px; border-radius: 8px; border-left: 4px solid <?php echo ! empty( $gsheets_config['enabled'] ) ? '#10b981' : '#64748b'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
                         <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase;">Google Sheets Sync</div>
                         <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 4px;">
                             <?php if ( ! empty( $gsheets_config['enabled'] ) ) : ?>
@@ -295,7 +335,7 @@ class Admin_Page {
                                     <span style="font-size: 12px; color: #d97706; margin-left: 5px;">(<?php echo esc_html( $unsynced_count ); ?> pendientes)</span>
                                 <?php endif; ?>
                             <?php else : ?>
-                                <span style="color: #d97706;">● Inactivo</span>
+                                <span style="color: #64748b;">● Inactivo</span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -303,33 +343,55 @@ class Admin_Page {
 
                 <form method="get" style="display: flex; gap: 6px;">
                     <input type="hidden" name="page" value="observatorio-surveys">
+                    <?php if ( 'all' !== $status_filter ) : ?>
+                        <input type="hidden" name="status_filter" value="<?php echo esc_attr( $status_filter ); ?>">
+                    <?php endif; ?>
                     <input type="search" name="s" value="<?php echo esc_attr( $search ); ?>" placeholder="Buscar por nombre, email, región..." style="min-width: 260px;">
                     <button type="submit" class="button">Buscar</button>
                     <?php if ( ! empty( $search ) ) : ?>
-                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="button">Limpiar</a>
+                        <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' . ( 'all' !== $status_filter ? '&status_filter=' . $status_filter : '' ) ) ); ?>" class="button">Limpiar</a>
                     <?php endif; ?>
                 </form>
             </div>
 
+            <!-- Filtros por Pestañas de Estado -->
+            <ul class="subsubsub" style="margin-bottom: 12px;">
+                <li>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="<?php echo 'all' === $status_filter ? 'current' : ''; ?>">
+                        Todas <span class="count">(<?php echo esc_html( $count_all ); ?>)</span>
+                    </a> |
+                </li>
+                <li>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&status_filter=completed' ) ); ?>" class="<?php echo 'completed' === $status_filter ? 'current' : ''; ?>">
+                        Completadas <span class="count">(<?php echo esc_html( $count_completed ); ?>)</span>
+                    </a> |
+                </li>
+                <li>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&status_filter=in_progress' ) ); ?>" class="<?php echo 'in_progress' === $status_filter ? 'current' : ''; ?>">
+                        Incompletas / En Progreso <span class="count">(<?php echo esc_html( $count_in_prog ); ?>)</span>
+                    </a>
+                </li>
+            </ul>
+
             <table class="wp-list-table widefat fixed striped table-view-list">
                 <thead>
                     <tr>
-                        <th style="width: 55px;">ID</th>
-                        <th style="width: 120px;">Fecha</th>
+                        <th style="width: 50px;">ID</th>
+                        <th style="width: 115px;">Fecha</th>
                         <th>Paciente</th>
                         <th>Contacto</th>
                         <th>Región</th>
+                        <th style="width: 130px; text-align: center;">Estado</th>
                         <th>Sistema Salud</th>
-                        <th>Edad Diag.</th>
                         <th style="width: 100px; text-align: center;">Google Sheets</th>
-                        <th style="width: 130px; text-align: center;">Acciones</th>
+                        <th style="width: 120px; text-align: center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if ( empty( $submissions ) ) : ?>
                         <tr>
                             <td colspan="9" style="text-align: center; padding: 35px; color: #64748b; font-size: 15px;">
-                                No se encontraron respuestas registradas.
+                                No se encontraron respuestas con los criterios seleccionados.
                             </td>
                         </tr>
                     <?php else : ?>
@@ -339,18 +401,35 @@ class Admin_Page {
                             $delete_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=delete&id=' . $sub['id'] ), 'obs_delete_entry_' . $sub['id'] );
                             $sync_url   = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] ), 'obs_sync_single_' . $sub['id'] );
                             $is_synced  = ! empty( $sub['synced_to_sheets'] );
+                            $is_completed = ( 'completed' === ( $sub['status'] ?? 'completed' ) );
+                            $last_step  = (int) ( $sub['last_step_reached'] ?? 1 );
                             ?>
                             <tr>
                                 <td><strong>#<?php echo esc_html( $sub['id'] ); ?></strong></td>
                                 <td><?php echo esc_html( date( 'd/m/Y H:i', strtotime( $sub['created_at'] ) ) ); ?></td>
-                                <td><strong><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></strong> (<?php echo esc_html( $sub['age'] ); ?> años)</td>
+                                <td>
+                                    <strong><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></strong>
+                                    <?php if ( ! empty( $sub['age'] ) ) : ?>
+                                        <small style="color:#64748b;">(<?php echo esc_html( $sub['age'] ); ?> años)</small>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <?php echo esc_html( $sub['email'] ); ?><br>
                                     <small style="color:#64748b;"><?php echo esc_html( $sub['phone'] ); ?></small>
                                 </td>
-                                <td><?php echo esc_html( $sub['region'] ); ?></td>
-                                <td><?php echo esc_html( $sub['health_system'] ); ?></td>
-                                <td><?php echo esc_html( $sub['age_diagnosis'] ); ?></td>
+                                <td><?php echo esc_html( $sub['region'] ?: '—' ); ?></td>
+                                <td style="text-align: center;">
+                                    <?php if ( $is_completed ) : ?>
+                                        <span style="display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                                            ✓ Completa
+                                        </span>
+                                    <?php else : ?>
+                                        <span style="display: inline-block; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;" title="Abandonada / En progreso en Paso <?php echo esc_attr( $last_step ); ?>">
+                                            ⏳ Paso <?php echo esc_html( $last_step ); ?> / 6
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo esc_html( $sub['health_system'] ?: '—' ); ?></td>
                                 <td style="text-align: center;">
                                     <?php if ( $is_synced ) : ?>
                                         <span class="dashicons dashicons-yes-alt" style="color: #10b981;" title="Sincronizado a Google Sheets (<?php echo esc_attr( $sub['synced_at'] ?? '' ); ?>)"></span>
@@ -373,7 +452,7 @@ class Admin_Page {
             <?php if ( $total_pages > 1 ) : ?>
                 <div class="tablenav bottom">
                     <div class="tablenav-pages">
-                        <span class="displaying-num"><?php echo esc_html( $total_submissions ); ?> elementos</span>
+                        <span class="displaying-num"><?php echo esc_html( $total_filtered ); ?> elementos</span>
                         <span class="pagination-links">
                             <?php for ( $i = 1; $i <= $total_pages; $i++ ) : ?>
                                 <?php if ( $i === $paged ) : ?>
@@ -425,8 +504,9 @@ class Admin_Page {
                                 <td>
                                     <label>
                                         <input type="checkbox" name="enabled" value="1" <?php checked( ! empty( $config['enabled'] ) ); ?>>
-                                        <strong>Habilitar envío inmediato a Google Sheets al completar cada encuesta</strong>
+                                        <strong>Habilitar envío automático a Google Sheets en tiempo real</strong>
                                     </label>
+                                    <p class="description">Guarda las encuestas incompletas en la pestaña <code>Incompleto</code> y las finalizadas en <code>Completo</code>.</p>
                                 </td>
                             </tr>
 
@@ -439,10 +519,18 @@ class Admin_Page {
                             </tr>
 
                             <tr>
-                                <th scope="row"><label for="sheet_name">Nombre de la Pestaña / Hoja</label></th>
+                                <th scope="row"><label for="sheet_name">Pestaña para Encuestas Completadas</label></th>
                                 <td>
-                                    <input type="text" id="sheet_name" name="sheet_name" value="<?php echo esc_attr( $config['sheet_name'] ); ?>" class="regular-text" placeholder="Respuestas">
-                                    <p class="description">Nombre de la pestaña dentro del libro (ej. <code>Respuestas</code> o <code>Hoja 1</code>). Si no tiene cabeceras, se crearán automáticamente.</p>
+                                    <input type="text" id="sheet_name" name="sheet_name" value="<?php echo esc_attr( $config['sheet_name'] ); ?>" class="regular-text" placeholder="Completo">
+                                    <p class="description">Nombre de la pestaña para respuestas enviadas al final del Paso 6 (por defecto: <code>Completo</code>).</p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row"><label for="sheet_name_incomplete">Pestaña para Encuestas Incompletas</label></th>
+                                <td>
+                                    <input type="text" id="sheet_name_incomplete" name="sheet_name_incomplete" value="<?php echo esc_attr( $config['sheet_name_incomplete'] ?? 'Incompleto' ); ?>" class="regular-text" placeholder="Incompleto">
+                                    <p class="description">Nombre de la pestaña para respuestas parciales guardadas paso a paso (por defecto: <code>Incompleto</code>).</p>
                                 </td>
                             </tr>
 
@@ -649,6 +737,20 @@ class Admin_Page {
                     <h3 style="margin-top: 0; border-bottom: 2px solid #381e72; padding-bottom: 8px; color: #381e72;">Datos del Paciente</h3>
                     <table class="widefat" style="border: none;">
                         <tbody>
+                            <tr>
+                                <td><strong>Estado Encuesta:</strong></td>
+                                <td>
+                                    <?php if ( 'completed' === ( $sub['status'] ?? 'completed' ) ) : ?>
+                                        <span style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                                            ✓ Completa
+                                        </span>
+                                    <?php else : ?>
+                                        <span style="background: #fffbeb; color: #92400e; border: 1px solid #fde68a; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;">
+                                            ⏳ Incompleta (Último paso alcanzado: Paso <?php echo esc_html( $sub['last_step_reached'] ?? 1 ); ?> / 6)
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
                             <tr><td><strong>Nombres:</strong></td><td><?php echo esc_html( $sub['first_name'] ); ?></td></tr>
                             <tr><td><strong>Apellidos:</strong></td><td><?php echo esc_html( $sub['last_name'] ); ?></td></tr>
                             <tr><td><strong>Edad:</strong></td><td><?php echo esc_html( $sub['age'] ); ?> años</td></tr>

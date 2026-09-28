@@ -19,6 +19,8 @@ class Plugin {
     }
 
     public function run() {
+        Activator::maybe_upgrade();
+
         add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_shortcode( 'encuesta_cancer_mama', array( $this, 'render_shortcode' ) );
@@ -45,8 +47,9 @@ class Plugin {
         );
 
         wp_localize_script( 'obs-survey-script', 'obsSurveyConfig', array(
-            'apiUrl' => esc_url_raw( rest_url( 'observatorio/v1/survey/submit' ) ),
-            'nonce'  => wp_create_nonce( 'wp_rest' ),
+            'apiUrl'      => esc_url_raw( rest_url( 'observatorio/v1/survey/submit' ) ),
+            'stepSaveUrl' => esc_url_raw( rest_url( 'observatorio/v1/survey/step-save' ) ),
+            'nonce'       => wp_create_nonce( 'wp_rest' ),
         ) );
     }
 

@@ -5,6 +5,20 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.6.0] - 2026-09-28
+
+### Added
+- **Captura Progresiva en Tiempo Real (Autosave Multi-Paso):** Guardado asíncrono en segundo plano tras validar y avanzar cada paso del wizard sin congelar ni demorar la navegación del usuario.
+- **Doble Pestaña en Google Sheets (`Completo` e `Incompleto`):**
+  - Respuestas parciales/abandonadas en los Pasos 1 a 5 se guardan o actualizan automáticamente (upsert por ID) en la pestaña `Incompleto`.
+  - Respuestas finalizadas en el Paso 6 se registran de forma definitiva en la pestaña `Completo`.
+- **Nuevo Endpoint REST `/survey/step-save`:** Permite almacenar de forma incremental los datos de contacto y respuestas por paso vinculados al `submission_id`.
+- **Migración de Base de Datos:** Nueva columna `last_step_reached` (TINYINT) para rastrear el último paso alcanzado por el usuario.
+- **Filtros y Métricas en WP Admin:**
+  - Vistas filtradas por estado: `Todas`, `Completadas`, `Incompletas / En Progreso`.
+  - Badges visuales identificando el paso donde el usuario abandonó la encuesta (ej. `⏳ Paso 3 / 6` vs `✓ Completa`).
+  - Exportación de CSV segmentada por estado con columnas de `Estado` y `Último Paso`.
+
 ## [1.5.0] - 2026-09-28
 
 ### Changed

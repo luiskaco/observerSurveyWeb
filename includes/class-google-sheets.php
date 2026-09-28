@@ -15,10 +15,11 @@ class Google_Sheets {
      */
     public static function get_config() {
         $defaults = array(
-            'enabled'        => false,
-            'spreadsheet_id' => '',
-            'sheet_name'     => 'Respuestas',
-            'credentials'    => '', // JSON raw o vacío si usa archivo local
+            'enabled'                => false,
+            'spreadsheet_id'         => '',
+            'sheet_name'             => 'Completo',
+            'sheet_name_incomplete'  => 'Incompleto',
+            'credentials'            => '', // JSON raw o vacío si usa archivo local
         );
 
         $saved = get_option( self::OPTION_KEY, array() );
@@ -31,9 +32,10 @@ class Google_Sheets {
     public static function save_config( $data ) {
         $config = self::get_config();
 
-        $config['enabled']        = ! empty( $data['enabled'] );
-        $config['spreadsheet_id'] = self::extract_spreadsheet_id( sanitize_text_field( $data['spreadsheet_id'] ?? '' ) );
-        $config['sheet_name']     = sanitize_text_field( $data['sheet_name'] ?? 'Respuestas' );
+        $config['enabled']               = ! empty( $data['enabled'] );
+        $config['spreadsheet_id']        = self::extract_spreadsheet_id( sanitize_text_field( $data['spreadsheet_id'] ?? '' ) );
+        $config['sheet_name']            = sanitize_text_field( $data['sheet_name'] ?? 'Completo' );
+        $config['sheet_name_incomplete'] = sanitize_text_field( $data['sheet_name_incomplete'] ?? 'Incompleto' );
         
         if ( isset( $data['credentials'] ) ) {
             $trimmed = trim( $data['credentials'] );
@@ -177,7 +179,7 @@ class Google_Sheets {
     }
 
     /**
-     * Sincroniza un registro de encuesta a Google Sheets
+     * Sincroniza un registro de encuesta a Google Sheets (en la pestaña 'Completo' o 'Incompleto')
      */
     public static function append_submission( $submission, $responses = array(), $is_manual = false ) {
         $config = self::get_config();
@@ -200,8 +202,17 @@ class Google_Sheets {
         }
 
         $spreadsheet_id = $config['spreadsheet_id'];
-        $raw_sheet_name = ! empty( $config['sheet_name'] ) ? $config['sheet_name'] : 'Respuestas';
-        $sheet_name     = self::resolve_sheet_name( $spreadsheet_id, $raw_sheet_name, $token );
+        $sub_data       = is_object( $submission ) ? (array) $submission : $submission;
+        $status         = $sub_data['status'] ?? 'completed';
+
+        // Determinar pestaña según estado: 'Completo' o 'Incompleto'
+        if ( 'in_progress' === $status ) {
+            $raw_sheet_name = ! empty( $config['sheet_name_incomplete'] ) ? $config['sheet_name_incomplete'] : 'Incompleto';
+        } else {
+            $raw_sheet_name = ! empty( $config['sheet_name'] ) ? $config['sheet_name'] : 'Completo';
+        }
+
+        $sheet_name = self::resolve_sheet_name( $spreadsheet_id, $raw_sheet_name, $token );
 
         // Asegurar que existan los encabezados en la primera fila
         $header_check = self::ensure_headers( $spreadsheet_id, $sheet_name, $token );
@@ -210,16 +221,144 @@ class Google_Sheets {
         }
 
         // Construir la fila con todas las columnas
-        $row_values = self::format_submission_row( $submission, $responses );
-        $range      = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
+        $row_values = self::format_submission_row( $sub_data, $responses );
+        $sub_id     = $sub_data['id'] ?? null;
 
-        $url = sprintf(
-            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+        // Si es 'in_progress', buscar si ya existe la fila en 'Incompleto' para actualizarla (upsert)
+        if ( 'in_progress' === $status && ! empty( $sub_id ) ) {
+            $upsert_res = self::upsert_row_to_sheet( $spreadsheet_id, $sheet_name, $sub_id, $row_values, $token );
+            if ( is_wp_error( $upsert_res ) ) {
+                return $upsert_res;
+            }
+        } else {
+            // Append regular
+            $range = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
+            $url   = sprintf(
+                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+                urlencode( $spreadsheet_id ),
+                rawurlencode( $range )
+            );
+
+            $response = wp_remote_post( $url, array(
+                'timeout' => 15,
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $token,
+                    'Content-Type'  => 'application/json',
+                ),
+                'body'    => json_encode( array(
+                    'values' => array( $row_values ),
+                ) ),
+            ) );
+
+            if ( is_wp_error( $response ) ) {
+                error_log( '[Observatorio Google Sheets] Append Error: ' . $response->get_error_message() );
+                return $response;
+            }
+
+            $code = wp_remote_retrieve_response_code( $response );
+            if ( 200 !== $code ) {
+                $body_raw  = wp_remote_retrieve_body( $response );
+                $body_json = json_decode( $body_raw, true );
+                $err_msg   = $body_json['error']['message'] ?? ( ! empty( $body_raw ) ? $body_raw : 'Error desconocido de Google Sheets' );
+                $creds     = self::get_credentials();
+
+                if ( 403 === $code ) {
+                    $err_msg = 'Permiso denegado por Google. Comparte tu hoja con permiso de EDITOR a: ' . ( $creds['client_email'] ?? '' );
+                } elseif ( 404 === $code ) {
+                    $err_msg = 'No se encontró la hoja de cálculo con el ID configurado.';
+                }
+
+                error_log( '[Observatorio Google Sheets] HTTP ' . $code . ': ' . $err_msg );
+                return new \WP_Error( 'sheet_append_failed', $err_msg );
+            }
+        }
+
+        // Marcar en BD como sincronizado
+        if ( ! empty( $sub_id ) ) {
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'obs_survey_submissions';
+            $wpdb->update(
+                $table_name,
+                array(
+                    'synced_to_sheets' => 1,
+                    'synced_at'        => current_time( 'mysql' ),
+                ),
+                array( 'id' => $sub_id ),
+                array( '%d', '%s' ),
+                array( '%d' )
+            );
+        }
+
+        return true;
+    }
+
+    /**
+     * Upsert para la pestaña de incompletos: busca si el ID ya existe en Columna A y actualiza su fila o hace append
+     */
+    public static function upsert_row_to_sheet( $spreadsheet_id, $sheet_name, $submission_id, $row_values, $token ) {
+        $range_col_a = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
+        $get_url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s',
             urlencode( $spreadsheet_id ),
-            rawurlencode( $range )
+            rawurlencode( $range_col_a )
         );
 
-        $response = wp_remote_post( $url, array(
+        $response = wp_remote_get( $get_url, array(
+            'timeout' => 12,
+            'headers' => array( 'Authorization' => 'Bearer ' . $token ),
+        ) );
+
+        $found_row_index = null;
+        if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+            $data = json_decode( wp_remote_retrieve_body( $response ), true );
+            $rows = $data['values'] ?? array();
+            foreach ( $rows as $idx => $col_val ) {
+                if ( isset( $col_val[0] ) && (string) $col_val[0] === (string) $submission_id ) {
+                    $found_row_index = $idx + 1; // 1-based row number
+                    break;
+                }
+            }
+        }
+
+        if ( $found_row_index ) {
+            // Actualizar fila existente
+            $update_range = "'" . str_replace( "'", "''", $sheet_name ) . "'!A" . $found_row_index;
+            $put_url = sprintf(
+                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s?valueInputOption=USER_ENTERED',
+                urlencode( $spreadsheet_id ),
+                rawurlencode( $update_range )
+            );
+
+            $put_res = wp_remote_request( $put_url, array(
+                'method'  => 'PUT',
+                'timeout' => 15,
+                'headers' => array(
+                    'Authorization' => 'Bearer ' . $token,
+                    'Content-Type'  => 'application/json',
+                ),
+                'body'    => json_encode( array(
+                    'values' => array( $row_values ),
+                ) ),
+            ) );
+
+            if ( is_wp_error( $put_res ) ) {
+                return $put_res;
+            }
+            if ( 200 !== wp_remote_retrieve_response_code( $put_res ) ) {
+                return new \WP_Error( 'sheet_update_failed', 'Error al actualizar fila en Google Sheets.' );
+            }
+            return true;
+        }
+
+        // Si no se encontró, append
+        $append_range = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
+        $append_url   = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+            urlencode( $spreadsheet_id ),
+            rawurlencode( $append_range )
+        );
+
+        $append_res = wp_remote_post( $append_url, array(
             'timeout' => 15,
             'headers' => array(
                 'Authorization' => 'Bearer ' . $token,
@@ -230,42 +369,11 @@ class Google_Sheets {
             ) ),
         ) );
 
-        if ( is_wp_error( $response ) ) {
-            error_log( '[Observatorio Google Sheets] Append Error: ' . $response->get_error_message() );
-            return $response;
+        if ( is_wp_error( $append_res ) ) {
+            return $append_res;
         }
-
-        $code = wp_remote_retrieve_response_code( $response );
-        if ( 200 !== $code ) {
-            $body_raw  = wp_remote_retrieve_body( $response );
-            $body_json = json_decode( $body_raw, true );
-            $err_msg   = $body_json['error']['message'] ?? ( ! empty( $body_raw ) ? $body_raw : 'Error desconocido de Google Sheets' );
-            $creds     = self::get_credentials();
-
-            if ( 403 === $code ) {
-                $err_msg = 'Permiso denegado por Google. Comparte tu hoja con permiso de EDITOR a: ' . ( $creds['client_email'] ?? '' );
-            } elseif ( 404 === $code ) {
-                $err_msg = 'No se encontró la hoja de cálculo con el ID configurado.';
-            }
-
-            error_log( '[Observatorio Google Sheets] HTTP ' . $code . ': ' . $err_msg );
-            return new \WP_Error( 'sheet_append_failed', $err_msg );
-        }
-
-        // Marcar en BD como sincronizado
-        if ( is_array( $submission ) && isset( $submission['id'] ) ) {
-            global $wpdb;
-            $table_name = $wpdb->prefix . 'obs_survey_submissions';
-            $wpdb->update(
-                $table_name,
-                array(
-                    'synced_to_sheets' => 1,
-                    'synced_at'        => current_time( 'mysql' ),
-                ),
-                array( 'id' => $submission['id'] ),
-                array( '%d', '%s' ),
-                array( '%d' )
-            );
+        if ( 200 !== wp_remote_retrieve_response_code( $append_res ) ) {
+            return new \WP_Error( 'sheet_append_failed', 'Error al agregar fila en Google Sheets.' );
         }
 
         return true;

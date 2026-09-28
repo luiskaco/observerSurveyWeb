@@ -33,3 +33,11 @@
 ## Fase 8: Reversión de Flujo UX
 - [x] Revertir Antecedentes como Paso 1 y Tratamiento + Consentimiento como Paso 6.
 
+## Fase 9: Captura Progresiva en Tiempo Real y Doble Pestaña Google Sheets
+- [x] Base de Datos: Agregar columna `last_step_reached` a la tabla `wp_obs_survey_submissions` con migración runtime no destructiva.
+- [x] Backend / REST API: Crear endpoint `/survey/step-save` para guardado progresivo asíncrono y actualizar `/survey/submit` para asociar `submission_id`.
+- [x] Google Sheets: Integrar soporte de dos pestañas (`Completo` e `Incompleto`), con upsert por ID en `Incompleto` y registro en `Completo` al finalizar.
+- [x] Frontend: Implementar guardado en segundo plano al hacer clic en "SIGUIENTE", persistiendo el `submission_id` en localStorage.
+- [x] Panel WP Admin: Filtros visuales por estado (Todas / Completas / Incompletas), badges de paso alcanzado y exportación segmentada a CSV.
+
+
