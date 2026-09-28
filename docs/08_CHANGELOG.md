@@ -5,6 +5,11 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.6.1] - 2026-09-28
+
+### Fixed
+- **Limpieza Automática de Pestaña `Incompleto`:** Al completar el Paso 6, el sistema ahora busca y elimina automáticamente la fila correspondiente en la pestaña `Incompleto` de Google Sheets (`delete_row_from_sheet`), evitando registros duplicados entre ambas pestañas.
+
 ## [1.6.0] - 2026-09-28
 
 ### Added
