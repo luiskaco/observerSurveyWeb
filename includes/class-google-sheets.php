@@ -231,45 +231,39 @@ class Google_Sheets {
                 return $upsert_res;
             }
         } else {
-            // Append regular
-            $range = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
-            $url   = sprintf(
-                'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
-                urlencode( $spreadsheet_id ),
-                rawurlencode( $range )
-            );
-
-            $response = wp_remote_post( $url, array(
-                'timeout' => 15,
-                'headers' => array(
-                    'Authorization' => 'Bearer ' . $token,
-                    'Content-Type'  => 'application/json',
-                ),
-                'body'    => json_encode( array(
-                    'values' => array( $row_values ),
-                ) ),
-            ) );
-
-            if ( is_wp_error( $response ) ) {
-                error_log( '[Observatorio Google Sheets] Append Error: ' . $response->get_error_message() );
-                return $response;
-            }
-
-            $code = wp_remote_retrieve_response_code( $response );
-            if ( 200 !== $code ) {
-                $body_raw  = wp_remote_retrieve_body( $response );
-                $body_json = json_decode( $body_raw, true );
-                $err_msg   = $body_json['error']['message'] ?? ( ! empty( $body_raw ) ? $body_raw : 'Error desconocido de Google Sheets' );
-                $creds     = self::get_credentials();
-
-                if ( 403 === $code ) {
-                    $err_msg = 'Permiso denegado por Google. Comparte tu hoja con permiso de EDITOR a: ' . ( $creds['client_email'] ?? '' );
-                } elseif ( 404 === $code ) {
-                    $err_msg = 'No se encontró la hoja de cálculo con el ID configurado.';
+            // Encuesta completada: guardar/actualizar en pestaña 'Completo'
+            if ( ! empty( $sub_id ) ) {
+                $upsert_res = self::upsert_row_to_sheet( $spreadsheet_id, $sheet_name, $sub_id, $row_values, $token );
+                if ( is_wp_error( $upsert_res ) ) {
+                    return $upsert_res;
                 }
 
-                error_log( '[Observatorio Google Sheets] HTTP ' . $code . ': ' . $err_msg );
-                return new \WP_Error( 'sheet_append_failed', $err_msg );
+                // Limpiar/eliminar el registro de la pestaña 'Incompleto' si existía previamente
+                $incomplete_tab = ! empty( $config['sheet_name_incomplete'] ) ? $config['sheet_name_incomplete'] : 'Incompleto';
+                self::delete_row_from_sheet( $spreadsheet_id, $incomplete_tab, $sub_id, $token );
+            } else {
+                $range = "'" . str_replace( "'", "''", $sheet_name ) . "'!A:A";
+                $url   = sprintf(
+                    'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',
+                    urlencode( $spreadsheet_id ),
+                    rawurlencode( $range )
+                );
+
+                $response = wp_remote_post( $url, array(
+                    'timeout' => 15,
+                    'headers' => array(
+                        'Authorization' => 'Bearer ' . $token,
+                        'Content-Type'  => 'application/json',
+                    ),
+                    'body'    => json_encode( array(
+                        'values' => array( $row_values ),
+                    ) ),
+                ) );
+
+                if ( is_wp_error( $response ) ) {
+                    error_log( '[Observatorio Google Sheets] Append Error: ' . $response->get_error_message() );
+                    return $response;
+                }
             }
         }
 
@@ -374,6 +368,116 @@ class Google_Sheets {
         }
         if ( 200 !== wp_remote_retrieve_response_code( $append_res ) ) {
             return new \WP_Error( 'sheet_append_failed', 'Error al agregar fila en Google Sheets.' );
+        }
+
+        return true;
+    }
+
+    /**
+     * Elimina una fila de una pestaña específica por su submission_id (usado para limpiar 'Incompleto' cuando se completa la encuesta)
+     */
+    public static function delete_row_from_sheet( $spreadsheet_id, $sheet_name, $submission_id, $token ) {
+        if ( empty( $submission_id ) ) {
+            return false;
+        }
+
+        // 1. Obtener metadatos para conocer el sheetId (numérico) de la pestaña
+        $meta_url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s?fields=sheets.properties(sheetId,title)',
+            urlencode( $spreadsheet_id )
+        );
+
+        $meta_res = wp_remote_get( $meta_url, array(
+            'timeout' => 10,
+            'headers' => array( 'Authorization' => 'Bearer ' . $token ),
+        ) );
+
+        if ( is_wp_error( $meta_res ) || 200 !== wp_remote_retrieve_response_code( $meta_res ) ) {
+            return false;
+        }
+
+        $meta_data = json_decode( wp_remote_retrieve_body( $meta_res ), true );
+        $sheet_id_int = null;
+        $matched_title = null;
+
+        if ( ! empty( $meta_data['sheets'] ) ) {
+            foreach ( $meta_data['sheets'] as $s ) {
+                if ( isset( $s['properties']['title'] ) && strcasecmp( $s['properties']['title'], $sheet_name ) === 0 ) {
+                    $sheet_id_int  = $s['properties']['sheetId'];
+                    $matched_title = $s['properties']['title'];
+                    break;
+                }
+            }
+        }
+
+        if ( null === $sheet_id_int || empty( $matched_title ) ) {
+            return false;
+        }
+
+        // 2. Buscar en qué fila de la columna A se encuentra el ID
+        $range_col_a = "'" . str_replace( "'", "''", $matched_title ) . "'!A:A";
+        $get_url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s/values/%s',
+            urlencode( $spreadsheet_id ),
+            rawurlencode( $range_col_a )
+        );
+
+        $val_res = wp_remote_get( $get_url, array(
+            'timeout' => 10,
+            'headers' => array( 'Authorization' => 'Bearer ' . $token ),
+        ) );
+
+        if ( is_wp_error( $val_res ) || 200 !== wp_remote_retrieve_response_code( $val_res ) ) {
+            return false;
+        }
+
+        $val_data = json_decode( wp_remote_retrieve_body( $val_res ), true );
+        $rows     = $val_data['values'] ?? array();
+        $found_0_based_index = null;
+
+        foreach ( $rows as $idx => $col_val ) {
+            // Ignorar fila 0 (header)
+            if ( $idx > 0 && isset( $col_val[0] ) && (string) $col_val[0] === (string) $submission_id ) {
+                $found_0_based_index = $idx;
+                break;
+            }
+        }
+
+        if ( null === $found_0_based_index ) {
+            return true; // No estaba en la pestaña, nada que borrar
+        }
+
+        // 3. Eliminar la fila físicamente usando deleteDimension
+        $batch_url = sprintf(
+            'https://sheets.googleapis.com/v4/spreadsheets/%s:batchUpdate',
+            urlencode( $spreadsheet_id )
+        );
+
+        $del_res = wp_remote_post( $batch_url, array(
+            'timeout' => 15,
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ),
+            'body'    => json_encode( array(
+                'requests' => array(
+                    array(
+                        'deleteDimension' => array(
+                            'range' => array(
+                                'sheetId'    => (int) $sheet_id_int,
+                                'dimension'  => 'ROWS',
+                                'startIndex' => (int) $found_0_based_index,
+                                'endIndex'   => (int) $found_0_based_index + 1,
+                            ),
+                        ),
+                    ),
+                ),
+            ) ),
+        ) );
+
+        if ( is_wp_error( $del_res ) ) {
+            error_log( '[Observatorio Google Sheets] Delete Row Error: ' . $del_res->get_error_message() );
+            return false;
         }
 
         return true;
