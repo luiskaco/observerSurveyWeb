@@ -5,6 +5,11 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.5.0] - 2026-09-28
+
+### Changed
+- **Restauración del Flujo Original del Wizard:** La sección de **Antecedentes y Perfil General** (Nombres, Apellidos, Edad, Celular, Correo, Región, etc.) vuelve a posicionarse en el **Paso 1 (Inicio)**, y la sección de **Tratamiento y Experiencia** junto al **Consentimiento y Envío** vuelve al **Paso 6 (Final)**.
+
 ## [1.4.0] - 2026-09-25
 
 ### Changed

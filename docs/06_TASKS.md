@@ -29,3 +29,7 @@
 
 ## Fase 7: Reordenamiento de Flujo UX
 - [x] Trasladar el paso de Antecedentes y Consentimiento al Paso 6 (Final) para mejorar la conversión del formulario, manteniendo la persistencia e integridad de datos en BD y Google Sheets/CSV.
+
+## Fase 8: Reversión de Flujo UX
+- [x] Revertir Antecedentes como Paso 1 y Tratamiento + Consentimiento como Paso 6.
+
