@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-define( 'OBS_SURVEY_VERSION', '1.6.2' );
+define( 'OBS_SURVEY_VERSION', '1.7.0' );
 
 
 

@@ -462,6 +462,96 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Banner de Hito Motivacional Integrado (Top of Step) ---
+    const MILESTONES_DATA = {
+        2: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#d81b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>`,
+            title: '¡Paso 1 completado! 💜',
+            desc: 'Tu experiencia ayuda a que más mujeres conozcan la importancia de una detección temprana y oportuna.'
+        },
+        3: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#381e72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M9 12l2 2 4-4"></path>
+            </svg>`,
+            title: '¡Excelente avance!',
+            desc: 'Comprender los tiempos de derivación permite documentar las dificultades en cada región.'
+        },
+        4: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#d81b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="7"></circle>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>`,
+            title: '¡Vas a más de la mitad! 🌟',
+            desc: 'Cada respuesta que brindas es clave para exigir que no haya demoras en las consultas médicas.'
+        },
+        5: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#381e72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>`,
+            title: '¡Ya falta muy poco!',
+            desc: 'Agradecemos tu valentía y generosidad al compartir este recorrido. Estamos cerca de finalizar.'
+        },
+        6: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#d81b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>`,
+            title: '¡Último esfuerzo para finalizar! 🎉',
+            desc: 'Solo unos datos finales para registrar formalmente tu valioso testimonio.'
+        }
+    };
+
+    const milestoneBanner = document.getElementById('obs-milestone-banner');
+    const msIcon = document.getElementById('obs-ms-icon');
+    const msTitle = document.getElementById('obs-ms-title');
+    const msDesc = document.getElementById('obs-ms-desc');
+    const msClose = document.getElementById('obs-ms-close');
+    let milestoneTimer = null;
+
+    function showMilestoneBanner(stepNumber) {
+        const data = MILESTONES_DATA[stepNumber];
+        if (!data || !milestoneBanner) {
+            hideMilestoneBanner(true);
+            return;
+        }
+
+        if (msIcon) msIcon.innerHTML = data.iconSvg;
+        if (msTitle) msTitle.textContent = data.title;
+        if (msDesc) msDesc.textContent = data.desc;
+
+        milestoneBanner.classList.remove('fading');
+        milestoneBanner.style.display = 'flex';
+
+        clearTimeout(milestoneTimer);
+        milestoneTimer = setTimeout(() => {
+            hideMilestoneBanner();
+        }, 7000);
+    }
+
+    function hideMilestoneBanner(instant = false) {
+        clearTimeout(milestoneTimer);
+        if (!milestoneBanner || milestoneBanner.style.display === 'none') return;
+        if (instant) {
+            milestoneBanner.style.display = 'none';
+            milestoneBanner.classList.remove('fading');
+        } else {
+            milestoneBanner.classList.add('fading');
+            milestoneTimer = setTimeout(() => {
+                milestoneBanner.style.display = 'none';
+                milestoneBanner.classList.remove('fading');
+            }, 400);
+        }
+    }
+
+    if (msClose) {
+        msClose.addEventListener('click', () => {
+            hideMilestoneBanner();
+        });
+    }
+
     btnNext.addEventListener('click', () => {
         if (validateStep(currentStep)) {
             const stepCompleted = currentStep;
@@ -469,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentStep++;
                 updateWizardUI();
                 saveStepProgress(stepCompleted);
+                showMilestoneBanner(currentStep);
             }
         }
     });
@@ -477,8 +568,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentStep > 1) {
             currentStep--;
             updateWizardUI();
+            hideMilestoneBanner(true);
         }
     });
+
+    function triggerSuccessCelebration() {
+        const confettiContainer = document.getElementById('obs-confetti-container');
+        if (confettiContainer) {
+            confettiContainer.innerHTML = '';
+            const colors = ['#381e72', '#d81b60', '#10b981', '#7b63bf', '#f59e0b', '#ec4899'];
+            for (let i = 0; i < 45; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'obs-confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = (Math.random() * 1.5) + 's';
+                piece.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+                confettiContainer.appendChild(piece);
+            }
+        }
+
+        const waBtn = document.getElementById('obs-share-whatsapp-btn');
+        if (waBtn) {
+            const shareUrl = window.location.href.split('?')[0];
+            const shareText = encodeURIComponent(
+                "🌸 Hola, te invito a sumarte a la encuesta nacional del Observatorio sobre los tiempos de atención y diagnóstico del cáncer de mama en el Perú. ¡Cada testimonio ayuda a salvar vidas! Puedes llenarla aquí: " + shareUrl
+            );
+            waBtn.href = `https://api.whatsapp.com/send?text=${shareText}`;
+        }
+    }
 
     // --- Envío del Formulario (AJAX / REST API) ---
     form.addEventListener('submit', async (e) => {
@@ -560,7 +678,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const notice = document.querySelector('.obs-mandatory-notice');
                 if (progressWrapper) progressWrapper.style.display = 'none';
                 if (notice) notice.style.display = 'none';
-                if (successView) successView.style.display = 'block';
+                if (successView) {
+                    successView.style.display = 'block';
+                    triggerSuccessCelebration();
+                }
 
                 successView.scrollIntoView({ behavior: 'smooth' });
             } else {
@@ -590,3 +711,4 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDraft();
     updateWizardUI();
 });
+

@@ -44,6 +44,20 @@ if ( ! defined( 'ABSPATH' ) ) {
             *TODAS LAS PREGUNTAS SON OBLIGATORIAS
         </div>
 
+        <!-- Banner de Hito Motivacional Integrado -->
+        <div class="obs-milestone-banner" id="obs-milestone-banner" style="display: none;" role="status" aria-live="polite">
+            <div class="obs-milestone-content">
+                <div class="obs-milestone-icon" id="obs-ms-icon">
+                    <!-- Icono SVG inyectado vía JS -->
+                </div>
+                <div class="obs-milestone-text">
+                    <strong class="obs-milestone-title" id="obs-ms-title">¡Gran comienzo!</strong>
+                    <span class="obs-milestone-desc" id="obs-ms-desc">Tu experiencia ayuda a visibilizar la detección temprana.</span>
+                </div>
+            </div>
+            <button type="button" class="obs-milestone-close" id="obs-ms-close" aria-label="Cerrar">&times;</button>
+        </div>
+
         <!-- Formulario -->
         <form id="obs-survey-form" novalidate>
             <!-- Honeypot anti-spam -->
@@ -821,18 +835,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 
         <!-- Pantalla de Éxito / Agradecimiento -->
         <div class="obs-success-view" id="obs-success-view" style="display: none;">
+            <div class="obs-confetti-container" id="obs-confetti-container" aria-hidden="true"></div>
             <div class="obs-success-icon-circle">
                 <svg viewBox="0 0 52 52" class="obs-checkmark">
                     <circle cx="26" cy="26" r="25" fill="none"/>
                     <path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
                 </svg>
             </div>
+            <span class="obs-checkpoint-badge obs-badge-success">ENCUESTA REGISTRADA CON ÉXITO</span>
             <h2 class="obs-success-title">¡Muchas gracias por compartir tu experiencia!</h2>
             <p class="obs-success-message">
                 Tus respuestas son fundamentales para visibilizar los tiempos de espera y promover mejoras urgentes en el sistema oncológico del Perú.
             </p>
+
+            <div class="obs-share-card">
+                <p class="obs-share-title">💜 Ayúdanos a llegar a más pacientes</p>
+                <p class="obs-share-subtitle">Comparte este enlace para que más voces se sumen a la iniciativa:</p>
+                <a href="#" id="obs-share-whatsapp-btn" target="_blank" rel="noopener noreferrer" class="obs-btn obs-btn-whatsapp">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="obs-wa-svg">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.698c.969.54 1.861.854 2.796.855 3.18 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.766-5.768-5.766zm9.969 5.766c0 5.514-4.486 10-10 10-1.758 0-3.41-.458-4.856-1.258l-5.144 1.347 1.373-5.022c-.872-1.503-1.373-3.245-1.373-5.067 0-5.514 4.486-10 10-10s10 4.486 10 10z"/>
+                    </svg>
+                    Compartir por WhatsApp
+                </a>
+            </div>
+
             <div class="obs-success-actions">
-                <a href="/" class="obs-btn obs-btn-next">Volver al Inicio</a>
+                <a href="/" class="obs-btn obs-btn-outline">Volver al Inicio</a>
             </div>
         </div>
     </div>
