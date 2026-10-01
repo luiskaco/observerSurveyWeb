@@ -5,6 +5,12 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.7.0] - 2026-10-01
+
+### Changed
+- **Selección Completa de Regiones en Pregunta 1 (Paso 2):** Se reemplazó el radio button genérico *"Otra región del Perú"* por un selector desplegable (`<select>`) con todas las regiones/departamentos del Perú (Amazonas, Áncash, Arequipa, Cusco, Piura, etc., y opción extranjero).
+- **Lógica Condicional Dinámica:** La pregunta 1 mantiene la condición para Lima: si se selecciona *"Lima"*, las preguntas de derivación a Lima (Q2 a Q4) permanecen ocultas; si se selecciona cualquier otra región del Perú o extranjero, se despliega automáticamente el bloque de preguntas de derivación.
+
 ## [1.6.2] - 2026-09-28
 
 ### Fixed

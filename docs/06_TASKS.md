@@ -45,3 +45,8 @@
 - [x] Lógica de control en `survey-wizard.js`: auto-avance 3.2s, botón de salto inmediato, omitir en retroceso, iconos SVG animados.
 - [x] Estilos CSS responsive, paleta oficial (#381e72 / #d81b60), micro-animaciones y barra de cuenta regresiva (`survey-frontend.css`).
 - [x] Pantalla final de agradecimiento con animación de confeti suave y botón para compartir en WhatsApp.
+
+## Fase 11: Selector Completo de Regiones en Paso 2 (Pregunta 1)
+- [x] Reemplazar radio button "Otra región del Perú" por selector `<select>` con todas las regiones del país.
+- [x] Adaptar lógica condicional en `survey-wizard.js`: ocultar derivación solo si es "Lima", mostrar para cualquier otra región seleccionada.
+- [x] Validar compatibilidad e inserción en Google Sheets (`Completo` e `Incompleto`).

@@ -249,21 +249,40 @@ if ( ! defined( 'ABSPATH' ) ) {
                 </div>
 
                 <div class="obs-field-group">
-                    <label>1. ¿Dónde fuiste diagnosticada con cáncer de mama? <span class="req">*</span></label>
-                    <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card">
-                            <input type="radio" name="q1_diag_place" value="Lima" required>
-                            <span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Lima</span></span>
-                        </label>
-                        <label class="obs-choice-card">
-                            <input type="radio" name="q1_diag_place" value="Otra región del Perú" required>
-                            <span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Otra región del Perú</span></span>
-                        </label>
-                    </div>
+                    <label for="q1_diag_place">1. ¿Dónde fuiste diagnosticada con cáncer de mama? <span class="req">*</span></label>
+                    <select id="q1_diag_place" name="q1_diag_place" required>
+                        <option value="">-- Selecciona la región del diagnóstico --</option>
+                        <option value="Lima">Lima</option>
+                        <option value="Callao">Callao</option>
+                        <option value="Amazonas">Amazonas</option>
+                        <option value="Áncash">Áncash</option>
+                        <option value="Apurímac">Apurímac</option>
+                        <option value="Arequipa">Arequipa</option>
+                        <option value="Ayacucho">Ayacucho</option>
+                        <option value="Cajamarca">Cajamarca</option>
+                        <option value="Cusco">Cusco</option>
+                        <option value="Huancavelica">Huancavelica</option>
+                        <option value="Huánuco">Huánuco</option>
+                        <option value="Ica">Ica</option>
+                        <option value="Junín">Junín</option>
+                        <option value="La Libertad">La Libertad</option>
+                        <option value="Lambayeque">Lambayeque</option>
+                        <option value="Loreto">Loreto</option>
+                        <option value="Madre de Dios">Madre de Dios</option>
+                        <option value="Moquegua">Moquegua</option>
+                        <option value="Pasco">Pasco</option>
+                        <option value="Piura">Piura</option>
+                        <option value="Puno">Puno</option>
+                        <option value="San Martín">San Martín</option>
+                        <option value="Tacna">Tacna</option>
+                        <option value="Tumbes">Tumbes</option>
+                        <option value="Ucayali">Ucayali</option>
+                        <option value="Fuera del Perú / Extranjero">Fuera del Perú / Extranjero</option>
+                    </select>
                     <span class="obs-field-error"></span>
                 </div>
 
-                <!-- Bloque condicional: Solo si responde "Otra región del Perú" -->
+                <!-- Bloque condicional: Solo si la región de diagnóstico es fuera de Lima -->
                 <div class="obs-conditional-block" id="block-region-derivacion" style="display: none;">
                     <div class="obs-conditional-notice">
                         <span class="dashicons dashicons-info"></span> Preguntas para pacientes diagnosticadas fuera de Lima:

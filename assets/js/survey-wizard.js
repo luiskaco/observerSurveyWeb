@@ -37,25 +37,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Lógica Condicional ---
     function setupConditionalLogic() {
-        // Región de diagnóstico y derivación
-        const q1Radios = form.querySelectorAll('input[name="q1_diag_place"]');
+        // Región de diagnóstico y derivación (Q1 -> Q2, Q3, Q4)
+        const q1Element = form.querySelector('[name="q1_diag_place"]');
         const blockRegionDeriv = document.getElementById('block-region-derivacion');
         const q2Radios = form.querySelectorAll('input[name="q2_derivada_lima"]');
         const blockEtapaLima = document.getElementById('block-etapa-lima');
         const blockTiempoLima = document.getElementById('block-tiempo-lima');
 
-        q1Radios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (radio.value === 'Otra región del Perú') {
-                    blockRegionDeriv.style.display = 'block';
+        if (q1Element) {
+            const handleQ1Change = () => {
+                const val = q1Element.value;
+                if (val && val !== 'Lima') {
+                    if (blockRegionDeriv) blockRegionDeriv.style.display = 'block';
                 } else {
-                    blockRegionDeriv.style.display = 'none';
-                    clearInputsInside(blockRegionDeriv);
+                    if (blockRegionDeriv) {
+                        blockRegionDeriv.style.display = 'none';
+                        clearInputsInside(blockRegionDeriv);
+                    }
                     if (blockEtapaLima) blockEtapaLima.style.display = 'none';
                     if (blockTiempoLima) blockTiempoLima.style.display = 'none';
                 }
-            });
-        });
+            };
+
+            q1Element.addEventListener('change', handleQ1Change);
+            q1Element.addEventListener('input', handleQ1Change);
+        }
 
         q2Radios.forEach(radio => {
             radio.addEventListener('change', () => {
@@ -389,6 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fields = form.querySelectorAll(`[name="${key}"]`);
                 if (fields.length === 1 && (fields[0].type === 'text' || fields[0].type === 'number' || fields[0].type === 'email' || fields[0].type === 'tel' || fields[0].tagName === 'SELECT')) {
                     fields[0].value = data[key];
+                    if (fields[0].tagName === 'SELECT') {
+                        fields[0].dispatchEvent(new Event('change'));
+                    }
                 } else if (fields.length > 0 && fields[0].type === 'radio') {
                     fields.forEach(radio => {
                         if (radio.value === data[key]) {
