@@ -5,6 +5,11 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.7.2] - 2026-10-01
+
+### Changed
+- **Incremento de Versión para Cache-Busting:** Actualización de versión del plugin a 1.7.2 para forzar la recarga de scripts (`survey-wizard.js?ver=1.7.2`) en el hosting y navegadores de producción.
+
 ## [1.7.1] - 2026-10-01
 
 ### Fixed
