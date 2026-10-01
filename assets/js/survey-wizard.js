@@ -38,80 +38,105 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Lógica Condicional ---
     function setupConditionalLogic() {
         // Región de diagnóstico y derivación (Q1 -> Q2, Q3, Q4)
-        const q1Element = form.querySelector('[name="q1_diag_place"]');
+        const q1Fields = form.querySelectorAll('[name="q1_diag_place"]');
         const blockRegionDeriv = document.getElementById('block-region-derivacion');
         const q2Radios = form.querySelectorAll('input[name="q2_derivada_lima"]');
         const blockEtapaLima = document.getElementById('block-etapa-lima');
         const blockTiempoLima = document.getElementById('block-tiempo-lima');
 
-        if (q1Element) {
-            const handleQ1Change = () => {
-                const val = q1Element.value;
-                if (val && val !== 'Lima') {
-                    if (blockRegionDeriv) blockRegionDeriv.style.display = 'block';
-                } else {
-                    if (blockRegionDeriv) {
-                        blockRegionDeriv.style.display = 'none';
-                        clearInputsInside(blockRegionDeriv);
-                    }
-                    if (blockEtapaLima) blockEtapaLima.style.display = 'none';
-                    if (blockTiempoLima) blockTiempoLima.style.display = 'none';
-                }
-            };
+        const getQ1Value = () => {
+            const selectEl = form.querySelector('select[name="q1_diag_place"]');
+            if (selectEl) return selectEl.value ? selectEl.value.trim() : '';
+            const checkedRadio = form.querySelector('input[name="q1_diag_place"]:checked');
+            return checkedRadio ? checkedRadio.value.trim() : '';
+        };
 
-            q1Element.addEventListener('change', handleQ1Change);
-            q1Element.addEventListener('input', handleQ1Change);
-        }
+        const handleQ1Change = () => {
+            const val = getQ1Value();
+            if (val !== '' && val !== 'Lima') {
+                if (blockRegionDeriv) blockRegionDeriv.style.display = 'block';
+            } else {
+                if (blockRegionDeriv) {
+                    blockRegionDeriv.style.display = 'none';
+                    clearInputsInside(blockRegionDeriv);
+                }
+                if (blockEtapaLima) blockEtapaLima.style.display = 'none';
+                if (blockTiempoLima) blockTiempoLima.style.display = 'none';
+            }
+        };
+
+        q1Fields.forEach(field => {
+            field.addEventListener('change', handleQ1Change);
+            field.addEventListener('input', handleQ1Change);
+        });
+
+        const handleQ2Change = () => {
+            const checkedQ2 = form.querySelector('input[name="q2_derivada_lima"]:checked');
+            const q2Val = checkedQ2 ? checkedQ2.value.trim() : '';
+            if (q2Val === 'Si' || q2Val === 'Sí') {
+                if (blockEtapaLima) blockEtapaLima.style.display = 'block';
+                if (blockTiempoLima) blockTiempoLima.style.display = 'block';
+            } else {
+                if (blockEtapaLima) {
+                    blockEtapaLima.style.display = 'none';
+                    clearInputsInside(blockEtapaLima);
+                }
+                if (blockTiempoLima) {
+                    blockTiempoLima.style.display = 'none';
+                    clearInputsInside(blockTiempoLima);
+                }
+            }
+        };
 
         q2Radios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (radio.value === 'Si') {
-                    if (blockEtapaLima) blockEtapaLima.style.display = 'block';
-                    if (blockTiempoLima) blockTiempoLima.style.display = 'block';
-                } else {
-                    if (blockEtapaLima) {
-                        blockEtapaLima.style.display = 'none';
-                        clearInputsInside(blockEtapaLima);
-                    }
-                    if (blockTiempoLima) {
-                        blockTiempoLima.style.display = 'none';
-                        clearInputsInside(blockTiempoLima);
-                    }
-                }
-            });
+            radio.addEventListener('change', handleQ2Change);
         });
 
         // Subtipo de cáncer (Q22 -> Q23)
         const q22Radios = form.querySelectorAll('input[name="q22_informaron_subtipo"]');
         const blockQ23 = document.getElementById('block-q23');
-        q22Radios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (radio.value === 'Sí') {
-                    if (blockQ23) blockQ23.style.display = 'block';
-                } else {
-                    if (blockQ23) {
-                        blockQ23.style.display = 'none';
-                        clearInputsInside(blockQ23);
-                    }
+        const handleQ22Change = () => {
+            const checkedQ22 = form.querySelector('input[name="q22_informaron_subtipo"]:checked');
+            const val = checkedQ22 ? checkedQ22.value.trim() : '';
+            if (val === 'Sí' || val === 'Si') {
+                if (blockQ23) blockQ23.style.display = 'block';
+            } else {
+                if (blockQ23) {
+                    blockQ23.style.display = 'none';
+                    clearInputsInside(blockQ23);
                 }
-            });
+            }
+        };
+
+        q22Radios.forEach(radio => {
+            radio.addEventListener('change', handleQ22Change);
         });
 
         // Estadio diferente (Q26 -> Q27)
         const q26Radios = form.querySelectorAll('input[name="q26_estadio_diferente"]');
         const blockQ27 = document.getElementById('block-q27');
-        q26Radios.forEach(radio => {
-            radio.addEventListener('change', () => {
-                if (radio.value === 'Sí') {
-                    if (blockQ27) blockQ27.style.display = 'block';
-                } else {
-                    if (blockQ27) {
-                        blockQ27.style.display = 'none';
-                        clearInputsInside(blockQ27);
-                    }
+        const handleQ26Change = () => {
+            const checkedQ26 = form.querySelector('input[name="q26_estadio_diferente"]:checked');
+            const val = checkedQ26 ? checkedQ26.value.trim() : '';
+            if (val === 'Sí' || val === 'Si') {
+                if (blockQ27) blockQ27.style.display = 'block';
+            } else {
+                if (blockQ27) {
+                    blockQ27.style.display = 'none';
+                    clearInputsInside(blockQ27);
                 }
-            });
+            }
+        };
+
+        q26Radios.forEach(radio => {
+            radio.addEventListener('change', handleQ26Change);
         });
+
+        // Ejecución inicial de comprobación
+        handleQ1Change();
+        handleQ2Change();
+        handleQ22Change();
+        handleQ26Change();
     }
 
     function clearInputsInside(container) {

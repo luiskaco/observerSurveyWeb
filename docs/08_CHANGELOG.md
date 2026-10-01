@@ -5,6 +5,11 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.7.1] - 2026-10-01
+
+### Fixed
+- **Lógica Condicional de Selección de Regiones en Paso 2:** Se aseguró el evento `change` e `input` con lector agnóstico (`getQ1Value`) sobre `<select id="q1_diag_place">`, garantizando la apertura instantánea del bloque de derivación (`#block-region-derivacion`) al elegir cualquier región distinta a *"Lima"*.
+
 ## [1.7.0] - 2026-10-01
 
 ### Changed
