@@ -54,11 +54,12 @@ class Admin_Page {
             check_admin_referer( 'obs_save_gsheets_action', 'obs_gsheets_nonce' );
 
             $data = array(
-                'enabled'               => isset( $_POST['enabled'] ) ? 1 : 0,
-                'spreadsheet_id'        => sanitize_text_field( $_POST['spreadsheet_id'] ?? '' ),
-                'sheet_name'            => sanitize_text_field( $_POST['sheet_name'] ?? 'Completo' ),
-                'sheet_name_incomplete' => sanitize_text_field( $_POST['sheet_name_incomplete'] ?? 'Incompleto' ),
-                'credentials'           => ! empty( $_POST['credentials'] ) ? wp_unslash( $_POST['credentials'] ) : '',
+                'enabled'                => isset( $_POST['enabled'] ) ? 1 : 0,
+                'spreadsheet_id'         => sanitize_text_field( $_POST['spreadsheet_id'] ?? '' ),
+                'sheet_name'             => sanitize_text_field( $_POST['sheet_name'] ?? 'Completo' ),
+                'sheet_name_incomplete'  => sanitize_text_field( $_POST['sheet_name_incomplete'] ?? 'Incompleto' ),
+                'sheet_name_short_survey' => sanitize_text_field( $_POST['sheet_name_short_survey'] ?? 'EncuestaCorta' ),
+                'credentials'            => ! empty( $_POST['credentials'] ) ? wp_unslash( $_POST['credentials'] ) : '',
             );
 
             Google_Sheets::save_config( $data );
@@ -74,7 +75,23 @@ class Admin_Page {
         if ( isset( $_GET['action'] ) && 'export_csv' === $_GET['action'] ) {
             check_admin_referer( 'obs_export_csv_action', 'obs_export_nonce' );
             $status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( $_GET['status_filter'] ) : 'all';
-            $this->export_csv( $status_filter );
+            $type_filter   = isset( $_GET['type_filter'] ) ? sanitize_key( $_GET['type_filter'] ) : 'all';
+            $this->export_csv( $status_filter, $type_filter );
+        }
+
+        // Reiniciar contador de la Encuesta Corta
+        if ( isset( $_GET['action'] ) && 'reset_short_counter' === $_GET['action'] ) {
+            check_admin_referer( 'obs_reset_short_counter_action', 'obs_reset_nonce' );
+
+            global $wpdb;
+            $short_table = $wpdb->prefix . 'obs_survey_short_submissions';
+
+            // Eliminar registros de la encuesta corta y reiniciar contador a 1
+            $wpdb->query( "DELETE FROM $short_table" );
+            $wpdb->query( "ALTER TABLE $short_table AUTO_INCREMENT = 1" );
+
+            wp_safe_redirect( admin_url( 'admin.php?page=observatorio-surveys&short_reset=1' ) );
+            exit;
         }
 
         // Eliminar Registro
@@ -83,8 +100,12 @@ class Admin_Page {
             check_admin_referer( 'obs_delete_entry_' . $id );
 
             global $wpdb;
-            $table_name = $wpdb->prefix . 'obs_survey_submissions';
-            $wpdb->delete( $table_name, array( 'id' => $id ), array( '%d' ) );
+            $type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
+            if ( 'short' === $type || 'cancer_mama_corta' === $type ) {
+                $wpdb->delete( $wpdb->prefix . 'obs_survey_short_submissions', array( 'id' => $id ), array( '%d' ) );
+            } else {
+                $wpdb->delete( $wpdb->prefix . 'obs_survey_submissions', array( 'id' => $id ), array( '%d' ) );
+            }
 
             wp_safe_redirect( admin_url( 'admin.php?page=observatorio-surveys&deleted=1' ) );
             exit;
@@ -96,8 +117,18 @@ class Admin_Page {
             check_admin_referer( 'obs_sync_single_' . $id );
 
             global $wpdb;
-            $table_name = $wpdb->prefix . 'obs_survey_submissions';
-            $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $id ), ARRAY_A );
+            $type        = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
+            $orig_table  = $wpdb->prefix . 'obs_survey_submissions';
+            $short_table = $wpdb->prefix . 'obs_survey_short_submissions';
+
+            if ( 'short' === $type || 'cancer_mama_corta' === $type ) {
+                $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $short_table WHERE id = %d", $id ), ARRAY_A );
+            } else {
+                $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $orig_table WHERE id = %d", $id ), ARRAY_A );
+                if ( ! $row ) {
+                    $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $short_table WHERE id = %d", $id ), ARRAY_A );
+                }
+            }
 
             if ( $row ) {
                 $responses = json_decode( $row['responses_json'], true ) ?: array();
@@ -150,9 +181,10 @@ class Admin_Page {
         wp_send_json_success( $result );
     }
 
-    private function export_csv( $status_filter = 'all' ) {
+    private function export_csv( $status_filter = 'all', $type_filter = 'all' ) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'obs_survey_submissions';
+        $orig_table  = $wpdb->prefix . 'obs_survey_submissions';
+        $short_table = $wpdb->prefix . 'obs_survey_short_submissions';
         
         $where = "WHERE 1=1";
         if ( 'completed' === $status_filter ) {
@@ -161,9 +193,21 @@ class Admin_Page {
             $where .= " AND status = 'in_progress'";
         }
 
-        $results = $wpdb->get_results( "SELECT * FROM $table_name $where ORDER BY id DESC", ARRAY_A );
+        if ( 'cancer_mama_corta' === $type_filter ) {
+            $results = $wpdb->get_results( "SELECT *, 'cancer_mama_corta' as survey_type FROM $short_table $where ORDER BY id DESC", ARRAY_A ) ?: array();
+        } elseif ( 'cancer_mama_journey' === $type_filter ) {
+            $results = $wpdb->get_results( "SELECT *, 'cancer_mama_journey' as survey_type FROM $orig_table $where ORDER BY id DESC", ARRAY_A ) ?: array();
+        } else {
+            $orig_res  = $wpdb->get_results( "SELECT *, 'cancer_mama_journey' as survey_type FROM $orig_table $where ORDER BY id DESC", ARRAY_A ) ?: array();
+            $short_res = $wpdb->get_results( "SELECT *, 'cancer_mama_corta' as survey_type FROM $short_table $where ORDER BY id DESC", ARRAY_A ) ?: array();
+            $results   = array_merge( $orig_res, $short_res );
+            usort( $results, function( $a, $b ) {
+                return strtotime( $b['created_at'] ) - strtotime( $a['created_at'] );
+            } );
+        }
 
-        $filename = 'encuestas_cancer_mama_' . ( 'all' !== $status_filter ? $status_filter . '_' : '' ) . gmdate( 'Y-m-d_His' ) . '.csv';
+        $prefix = ( 'cancer_mama_corta' === $type_filter ) ? 'encuesta_corta_' : 'encuestas_cancer_mama_';
+        $filename = $prefix . ( 'all' !== $status_filter ? $status_filter . '_' : '' ) . gmdate( 'Y-m-d_His' ) . '.csv';
 
         header( 'Content-Type: text/csv; charset=utf-8' );
         header( 'Content-Disposition: attachment; filename=' . $filename );
@@ -173,25 +217,40 @@ class Admin_Page {
         $output = fopen( 'php://output', 'w' );
         fprintf( $output, chr( 0xEF ) . chr( 0xBB ) . chr( 0xBF ) ); // UTF-8 BOM
 
-        $questions_map = Google_Sheets::get_questions_map();
+        $is_short_export = ( 'cancer_mama_corta' === $type_filter );
+        $questions_map   = $is_short_export ? Google_Sheets::get_questions_map_short() : Google_Sheets::get_questions_map();
 
-        // Cabeceras base
-        $headers = array(
-            'ID',
-            'Fecha Registro',
-            'Estado',
-            'Último Paso',
-            'Nombres',
-            'Apellidos',
-            'Edad',
-            'Celular',
-            'Correo',
-            'Región',
-            'Es Paciente Actual',
-            'Sistema de Salud',
-            'Edad al Diagnóstico',
-            'Consentimiento',
-        );
+        if ( $is_short_export ) {
+            $headers = array(
+                'ID',
+                'Fecha Registro',
+                'Estado',
+                'Último Paso',
+                'Región Residencia',
+                'Condición (Paciente / Cuidador)',
+                'Sistema de Salud',
+                'Edad al Diagnóstico',
+                'Consentimiento',
+            );
+        } else {
+            $headers = array(
+                'ID',
+                'Fecha Registro',
+                'Estado',
+                'Último Paso',
+                'Tipo Encuesta',
+                'Nombres',
+                'Apellidos',
+                'Edad',
+                'Celular',
+                'Correo',
+                'Región',
+                'Es Paciente Actual',
+                'Sistema de Salud',
+                'Edad al Diagnóstico',
+                'Consentimiento',
+            );
+        }
 
         foreach ( $questions_map as $key => $label ) {
             $headers[] = $label;
@@ -202,31 +261,48 @@ class Admin_Page {
         if ( ! empty( $results ) ) {
             foreach ( $results as $row ) {
                 $responses = json_decode( $row['responses_json'], true ) ?: array();
-
-                $first_name = Rest_Controller::format_title_case( $row['first_name'] );
-                $last_name  = Rest_Controller::format_title_case( $row['last_name'] );
-                $phone      = Rest_Controller::format_phone( $row['phone'] );
-
                 $formatted_date = Rest_Controller::format_date( $row['created_at'] );
                 $estado_label   = ( 'completed' === $row['status'] ) ? 'Completa' : 'Incompleta';
                 $ultimo_paso    = 'Paso ' . ( $row['last_step_reached'] ?? 1 );
 
-                $line = array(
-                    $row['id'],
-                    $formatted_date,
-                    $estado_label,
-                    $ultimo_paso,
-                    $first_name,
-                    $last_name,
-                    $row['age'],
-                    $phone,
-                    $row['email'],
-                    $row['region'],
-                    $row['is_current_patient'],
-                    $row['health_system'],
-                    $row['age_diagnosis'],
-                    $row['consent_accepted'] ? 'Sí' : 'No',
-                );
+                if ( $is_short_export ) {
+                    $line = array(
+                        $row['id'],
+                        $formatted_date,
+                        $estado_label,
+                        $ultimo_paso,
+                        $row['region'],
+                        $row['is_current_patient'],
+                        $row['health_system'],
+                        $row['age_diagnosis'],
+                        ! empty( $row['consent_accepted'] ) ? 'Sí' : 'No',
+                    );
+                } else {
+                    $is_row_short = ( 'cancer_mama_corta' === ( $row['survey_type'] ?? '' ) );
+                    $first_name   = $is_row_short ? '—' : Rest_Controller::format_title_case( $row['first_name'] );
+                    $last_name    = $is_row_short ? '—' : Rest_Controller::format_title_case( $row['last_name'] );
+                    $phone        = $is_row_short ? '—' : Rest_Controller::format_phone( $row['phone'] );
+                    $email        = $is_row_short ? '—' : $row['email'];
+                    $tipo_label   = $is_row_short ? 'Encuesta Corta' : 'Encuesta Original';
+
+                    $line = array(
+                        $row['id'],
+                        $formatted_date,
+                        $estado_label,
+                        $ultimo_paso,
+                        $tipo_label,
+                        $first_name,
+                        $last_name,
+                        $row['age'],
+                        $phone,
+                        $email,
+                        $row['region'],
+                        $row['is_current_patient'],
+                        $row['health_system'],
+                        $row['age_diagnosis'],
+                        ! empty( $row['consent_accepted'] ) ? 'Sí' : 'No',
+                    );
+                }
 
                 foreach ( $questions_map as $key => $label ) {
                     $val = isset( $responses[ $key ] ) ? $responses[ $key ] : '';
@@ -251,38 +327,107 @@ class Admin_Page {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'obs_survey_submissions';
+        $orig_table  = $wpdb->prefix . 'obs_survey_submissions';
+        $short_table = $wpdb->prefix . 'obs_survey_short_submissions';
 
         $status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( $_GET['status_filter'] ) : 'all';
-        $search = isset( $_GET['s'] ) ? sanitize_text_field( trim( $_GET['s'] ) ) : '';
-        
-        $where = "WHERE 1=1";
-        if ( 'completed' === $status_filter ) {
-            $where .= " AND status = 'completed'";
-        } elseif ( 'in_progress' === $status_filter ) {
-            $where .= " AND status = 'in_progress'";
-        }
+        $type_filter   = isset( $_GET['type_filter'] ) ? sanitize_key( $_GET['type_filter'] ) : 'all';
+        $search        = isset( $_GET['s'] ) ? sanitize_text_field( trim( $_GET['s'] ) ) : '';
 
-        if ( ! empty( $search ) ) {
-            $like = '%' . $wpdb->esc_like( $search ) . '%';
-            $where .= $wpdb->prepare( " AND (first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR phone LIKE %s OR region LIKE %s)", $like, $like, $like, $like, $like );
-        }
+        // Conteos por tabla
+        $count_orig_all       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $orig_table" );
+        $count_orig_completed = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $orig_table WHERE status = 'completed'" );
+        $count_orig_in_prog   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $orig_table WHERE status = 'in_progress'" );
+        $unsynced_orig        = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $orig_table WHERE synced_to_sheets = 0" );
 
-        // Conteos globales
-        $count_all        = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" );
-        $count_completed  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'completed'" );
-        $count_in_prog    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'in_progress'" );
-        $unsynced_count   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE synced_to_sheets = 0" );
+        $count_short_all       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $short_table" );
+        $count_short_completed = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $short_table WHERE status = 'completed'" );
+        $count_short_in_prog   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $short_table WHERE status = 'in_progress'" );
+        $unsynced_short        = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $short_table WHERE synced_to_sheets = 0" );
 
-        $total_filtered   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table_name $where" );
-        $paged = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
-        $limit = 20;
+        $count_all        = $count_orig_all + $count_short_all;
+        $count_completed  = $count_orig_completed + $count_short_completed;
+        $count_in_prog    = $count_orig_in_prog + $count_short_in_prog;
+        $count_short      = $count_short_all;
+        $unsynced_count   = $unsynced_orig + $unsynced_short;
+
+        $paged  = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
+        $limit  = 20;
         $offset = ( $paged - 1 ) * $limit;
-        $total_pages = ceil( $total_filtered / $limit );
 
-        $submissions = $wpdb->get_results( "SELECT * FROM $table_name $where ORDER BY id DESC LIMIT $limit OFFSET $offset", ARRAY_A );
+        if ( 'cancer_mama_corta' === $type_filter ) {
+            $where = "WHERE 1=1";
+            if ( 'completed' === $status_filter ) {
+                $where .= " AND status = 'completed'";
+            } elseif ( 'in_progress' === $status_filter ) {
+                $where .= " AND status = 'in_progress'";
+            }
+            if ( ! empty( $search ) ) {
+                $like = '%' . $wpdb->esc_like( $search ) . '%';
+                $where .= $wpdb->prepare( " AND (region LIKE %s OR health_system LIKE %s OR is_current_patient LIKE %s)", $like, $like, $like );
+            }
+            $total_filtered = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $short_table $where" );
+            $submissions    = $wpdb->get_results( "SELECT *, 'cancer_mama_corta' as survey_type, 'short' as table_source FROM $short_table $where ORDER BY id DESC LIMIT $limit OFFSET $offset", ARRAY_A );
+        } elseif ( 'cancer_mama_journey' === $type_filter ) {
+            $where = "WHERE 1=1";
+            if ( 'completed' === $status_filter ) {
+                $where .= " AND status = 'completed'";
+            } elseif ( 'in_progress' === $status_filter ) {
+                $where .= " AND status = 'in_progress'";
+            }
+            if ( ! empty( $search ) ) {
+                $like = '%' . $wpdb->esc_like( $search ) . '%';
+                $where .= $wpdb->prepare( " AND (first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR phone LIKE %s OR region LIKE %s)", $like, $like, $like, $like, $like );
+            }
+            $total_filtered = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $orig_table $where" );
+            $submissions    = $wpdb->get_results( "SELECT *, 'cancer_mama_journey' as survey_type, 'orig' as table_source FROM $orig_table $where ORDER BY id DESC LIMIT $limit OFFSET $offset", ARRAY_A );
+        } else {
+            // 'all': Combinar ambas tablas
+            $orig_where  = "WHERE 1=1";
+            $short_where = "WHERE 1=1";
+            if ( 'completed' === $status_filter ) {
+                $orig_where  .= " AND status = 'completed'";
+                $short_where .= " AND status = 'completed'";
+            } elseif ( 'in_progress' === $status_filter ) {
+                $orig_where  .= " AND status = 'in_progress'";
+                $short_where .= " AND status = 'in_progress'";
+            }
+            if ( ! empty( $search ) ) {
+                $like = '%' . $wpdb->esc_like( $search ) . '%';
+                $orig_where  .= $wpdb->prepare( " AND (first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR phone LIKE %s OR region LIKE %s)", $like, $like, $like, $like, $like );
+                $short_where .= $wpdb->prepare( " AND (region LIKE %s OR health_system LIKE %s OR is_current_patient LIKE %s)", $like, $like, $like );
+            }
+
+            $count_filtered_orig  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $orig_table $orig_where" );
+            $count_filtered_short = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $short_table $short_where" );
+            $total_filtered       = $count_filtered_orig + $count_filtered_short;
+
+            $union_sql = "
+                SELECT * FROM (
+                    SELECT id, 'cancer_mama_journey' as survey_type, status, last_step_reached, first_name, last_name, age, phone, email, region, health_system, synced_to_sheets, synced_at, created_at, 'orig' as table_source FROM $orig_table $orig_where
+                    UNION ALL
+                    SELECT id, 'cancer_mama_corta' as survey_type, status, last_step_reached, '' as first_name, '' as last_name, 0 as age, '' as phone, '' as email, region, health_system, synced_to_sheets, synced_at, created_at, 'short' as table_source FROM $short_table $short_where
+                ) AS combined_surveys
+                ORDER BY created_at DESC LIMIT $limit OFFSET $offset
+            ";
+            $submissions = $wpdb->get_results( $union_sql, ARRAY_A ) ?: array();
+
+            // Salvaguarda para hosting: Si la consulta UNION fallase por alguna restricción de base de datos
+            if ( empty( $submissions ) && $total_filtered > 0 ) {
+                $fetch_limit = min( 200, $limit * 5 );
+                $orig_rows   = $wpdb->get_results( "SELECT id, 'cancer_mama_journey' as survey_type, status, last_step_reached, first_name, last_name, age, phone, email, region, health_system, synced_to_sheets, synced_at, created_at, 'orig' as table_source FROM $orig_table $orig_where ORDER BY created_at DESC LIMIT $fetch_limit", ARRAY_A ) ?: array();
+                $short_rows  = $wpdb->get_results( "SELECT id, 'cancer_mama_corta' as survey_type, status, last_step_reached, '' as first_name, '' as last_name, 0 as age, '' as phone, '' as email, region, health_system, synced_to_sheets, synced_at, created_at, 'short' as table_source FROM $short_table $short_where ORDER BY created_at DESC LIMIT $fetch_limit", ARRAY_A ) ?: array();
+                $combined    = array_merge( $orig_rows, $short_rows );
+                usort( $combined, function( $a, $b ) {
+                    return strtotime( $b['created_at'] ) - strtotime( $a['created_at'] );
+                } );
+                $submissions = array_slice( $combined, $offset, $limit );
+            }
+        }
+
+        $total_pages = ceil( $total_filtered / $limit );
         
-        $export_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=export_csv&status_filter=' . $status_filter ), 'obs_export_csv_action', 'obs_export_nonce' );
+        $export_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=export_csv&status_filter=' . $status_filter . '&type_filter=' . $type_filter ), 'obs_export_csv_action', 'obs_export_nonce' );
         $gsheets_config = Google_Sheets::get_config();
         ?>
         <div class="wrap">
@@ -296,8 +441,18 @@ class Admin_Page {
                 <span class="dashicons dashicons-google" style="vertical-align: middle; margin-top: -2px;"></span> Ajustes Google Sheets
             </a>
 
+            <?php
+            $reset_short_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=reset_short_counter' ), 'obs_reset_short_counter_action', 'obs_reset_nonce' );
+            ?>
+            <a href="<?php echo esc_url( $reset_short_url ); ?>" class="button" style="margin-left: 5px; color: #b91c1c; border-color: #fca5a5;" onclick="return confirm('⚠️ ¿Estás seguro de reiniciar el contador de la Encuesta Corta?\n\nEsta acción eliminará las respuestas registradas en la Encuesta Corta y reiniciará su contador desde el #1.\n\n(Las respuestas de la encuesta original no se verán afectadas).');">
+                <span class="dashicons dashicons-image-rotate" style="vertical-align: middle; margin-top: -2px;"></span> Reiniciar Contador Corta (a #1)
+            </a>
+
             <hr class="wp-header-end">
 
+            <?php if ( isset( $_GET['short_reset'] ) ) : ?>
+                <div class="notice notice-success is-dismissible"><p><strong>✓ El contador de la Encuesta Corta ha sido reiniciado a #1 exitosamente.</strong> Respuestas de prueba eliminadas.</p></div>
+            <?php endif; ?>
             <?php if ( isset( $_GET['deleted'] ) ) : ?>
                 <div class="notice notice-success is-dismissible"><p>Registro eliminado correctamente.</p></div>
             <?php endif; ?>
@@ -354,20 +509,30 @@ class Admin_Page {
                 </form>
             </div>
 
-            <!-- Filtros por Pestañas de Estado -->
+            <!-- Filtros por Pestañas de Estado y Tipo -->
             <ul class="subsubsub" style="margin-bottom: 12px;">
                 <li>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="<?php echo 'all' === $status_filter ? 'current' : ''; ?>">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="<?php echo ( 'all' === $status_filter && 'all' === $type_filter ) ? 'current' : ''; ?>">
                         Todas <span class="count">(<?php echo esc_html( $count_all ); ?>)</span>
                     </a> |
                 </li>
                 <li>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&status_filter=completed' ) ); ?>" class="<?php echo 'completed' === $status_filter ? 'current' : ''; ?>">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&type_filter=cancer_mama_journey' . ( 'all' !== $status_filter ? '&status_filter=' . $status_filter : '' ) ) ); ?>" class="<?php echo 'cancer_mama_journey' === $type_filter ? 'current' : ''; ?>">
+                        Encuesta Original <span class="count">(<?php echo esc_html( $count_orig_all ); ?>)</span>
+                    </a> |
+                </li>
+                <li>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&type_filter=cancer_mama_corta' . ( 'all' !== $status_filter ? '&status_filter=' . $status_filter : '' ) ) ); ?>" class="<?php echo 'cancer_mama_corta' === $type_filter ? 'current' : ''; ?>">
+                        Solo Encuesta Corta <span class="count">(<?php echo esc_html( $count_short ); ?>)</span>
+                    </a> |
+                </li>
+                <li>
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&status_filter=completed' . ( 'all' !== $type_filter ? '&type_filter=' . $type_filter : '' ) ) ); ?>" class="<?php echo 'completed' === $status_filter ? 'current' : ''; ?>">
                         Completadas <span class="count">(<?php echo esc_html( $count_completed ); ?>)</span>
                     </a> |
                 </li>
                 <li>
-                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&status_filter=in_progress' ) ); ?>" class="<?php echo 'in_progress' === $status_filter ? 'current' : ''; ?>">
+                    <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys&status_filter=in_progress' . ( 'all' !== $type_filter ? '&type_filter=' . $type_filter : '' ) ) ); ?>" class="<?php echo 'in_progress' === $status_filter ? 'current' : ''; ?>">
                         Incompletas / En Progreso <span class="count">(<?php echo esc_html( $count_in_prog ); ?>)</span>
                     </a>
                 </li>
@@ -397,25 +562,41 @@ class Admin_Page {
                     <?php else : ?>
                         <?php foreach ( $submissions as $sub ) : ?>
                             <?php
-                            $detail_url = admin_url( 'admin.php?page=observatorio-surveys&view_id=' . $sub['id'] );
-                            $delete_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=delete&id=' . $sub['id'] ), 'obs_delete_entry_' . $sub['id'] );
-                            $sync_url   = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] ), 'obs_sync_single_' . $sub['id'] );
-                            $is_synced  = ! empty( $sub['synced_to_sheets'] );
+                            $is_short_row = ( 'cancer_mama_corta' === ( $sub['survey_type'] ?? '' ) );
+                            $src          = $sub['table_source'] ?? ( $is_short_row ? 'short' : 'orig' );
+                            $detail_url   = admin_url( 'admin.php?page=observatorio-surveys&view_id=' . $sub['id'] . '&type=' . $src );
+                            $delete_url   = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=delete&id=' . $sub['id'] . '&type=' . $src ), 'obs_delete_entry_' . $sub['id'] );
+                            $sync_url     = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] . '&type=' . $src ), 'obs_sync_single_' . $sub['id'] );
+                            $is_synced    = ! empty( $sub['synced_to_sheets'] );
                             $is_completed = ( 'completed' === ( $sub['status'] ?? 'completed' ) );
-                            $last_step  = (int) ( $sub['last_step_reached'] ?? 1 );
+                            $last_step    = (int) ( $sub['last_step_reached'] ?? 1 );
                             ?>
                             <tr>
-                                <td><strong>#<?php echo esc_html( $sub['id'] ); ?></strong></td>
+                                <td>
+                                    <strong>#<?php echo esc_html( $sub['id'] ); ?></strong>
+                                    <?php if ( 'all' === $type_filter ) : ?>
+                                        <br><span style="font-size: 10px; font-weight: 600; color: <?php echo $is_short_row ? '#381e72' : '#64748b'; ?>;"><?php echo $is_short_row ? 'Corta' : 'Original'; ?></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo esc_html( date( 'd/m/Y H:i', strtotime( $sub['created_at'] ) ) ); ?></td>
                                 <td>
-                                    <strong><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></strong>
-                                    <?php if ( ! empty( $sub['age'] ) ) : ?>
-                                        <small style="color:#64748b;">(<?php echo esc_html( $sub['age'] ); ?> años)</small>
+                                    <?php if ( $is_short_row ) : ?>
+                                        <strong style="color: #381e72;">Encuesta Corta</strong>
+                                        <span style="display: block; font-size: 11px; color: #64748b;">(Participante Anónima)</span>
+                                    <?php else : ?>
+                                        <strong><?php echo esc_html( $sub['first_name'] . ' ' . $sub['last_name'] ); ?></strong>
+                                        <?php if ( ! empty( $sub['age'] ) ) : ?>
+                                            <small style="color:#64748b;">(<?php echo esc_html( $sub['age'] ); ?> años)</small>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php echo esc_html( $sub['email'] ); ?><br>
-                                    <small style="color:#64748b;"><?php echo esc_html( $sub['phone'] ); ?></small>
+                                    <?php if ( $is_short_row ) : ?>
+                                        <small style="color: #94a3b8;">No aplica (Anónima)</small>
+                                    <?php else : ?>
+                                        <?php echo esc_html( $sub['email'] ); ?><br>
+                                        <small style="color:#64748b;"><?php echo esc_html( $sub['phone'] ); ?></small>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo esc_html( $sub['region'] ?: '—' ); ?></td>
                                 <td style="text-align: center;">
@@ -425,7 +606,7 @@ class Admin_Page {
                                         </span>
                                     <?php else : ?>
                                         <span style="display: inline-block; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; padding: 2px 8px; border-radius: 12px; font-weight: 600; font-size: 11px;" title="Abandonada / En progreso en Paso <?php echo esc_attr( $last_step ); ?>">
-                                            ⏳ Paso <?php echo esc_html( $last_step ); ?> / 6
+                                            ⏳ Paso <?php echo esc_html( $last_step ); ?> / <?php echo $is_short_row ? '4' : '6'; ?>
                                         </span>
                                     <?php endif; ?>
                                 </td>
@@ -530,7 +711,15 @@ class Admin_Page {
                                 <th scope="row"><label for="sheet_name_incomplete">Pestaña para Encuestas Incompletas</label></th>
                                 <td>
                                     <input type="text" id="sheet_name_incomplete" name="sheet_name_incomplete" value="<?php echo esc_attr( $config['sheet_name_incomplete'] ?? 'Incompleto' ); ?>" class="regular-text" placeholder="Incompleto">
-                                    <p class="description">Nombre de la pestaña para respuestas parciales guardadas paso a paso (por defecto: <code>Incompleto</code>).</p>
+                                    <p class="description">Nombre de la pestaña para respuestas parciales guardadas paso a paso de la encuesta original (por defecto: <code>Incompleto</code>).</p>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row"><label for="sheet_name_short_survey">Pestaña para Encuesta Corta (<code>[short_survey]</code>)</label></th>
+                                <td>
+                                    <input type="text" id="sheet_name_short_survey" name="sheet_name_short_survey" value="<?php echo esc_attr( $config['sheet_name_short_survey'] ?? 'EncuestaCorta' ); ?>" class="regular-text" placeholder="EncuestaCorta">
+                                    <p class="description">Nombre de la pestaña única en Google Sheets para la encuesta corta (por defecto: <code>EncuestaCorta</code>). Utiliza columna de estado (<code>Incompleto</code> / <code>Completo</code>).</p>
                                 </td>
                             </tr>
 
@@ -687,10 +876,23 @@ class Admin_Page {
                         btnSync.innerHTML = '<span class="dashicons dashicons-update" style="vertical-align: middle; margin-top: -2px;"></span> Sincronizar Pendientes';
 
                         if (data.success) {
-                            resultBox.style.background = '#ecfdf5';
-                            resultBox.style.color = '#065f46';
-                            resultBox.style.border = '1px solid #6ee7b7';
-                            resultBox.innerHTML = '<strong>✅ Sincronización completada:</strong> ' + data.data.synced + ' de ' + data.data.total + ' registros pendientes sincronizados.';
+                            if (data.data.synced === data.data.total && data.data.total > 0) {
+                                resultBox.style.background = '#ecfdf5';
+                                resultBox.style.color = '#065f46';
+                                resultBox.style.border = '1px solid #6ee7b7';
+                                resultBox.innerHTML = '<strong>✅ Sincronización completada:</strong> ' + data.data.synced + ' de ' + data.data.total + ' registros pendientes sincronizados con Google Sheets.';
+                            } else if (data.data.total === 0) {
+                                resultBox.style.background = '#ecfdf5';
+                                resultBox.style.color = '#065f46';
+                                resultBox.style.border = '1px solid #6ee7b7';
+                                resultBox.innerHTML = '<strong>✅ Todo al día:</strong> No hay registros pendientes de sincronización.';
+                            } else {
+                                resultBox.style.background = '#fffbeb';
+                                resultBox.style.color = '#92400e';
+                                resultBox.style.border = '1px solid #fcd34d';
+                                let errMsg = (data.data.errors && data.data.errors.length) ? '<br><small style="color:#b91c1c;">Detalle: ' + data.data.errors.join(', ') + '</small>' : '';
+                                resultBox.innerHTML = '<strong>⚠️ Sincronización parcial:</strong> Se sincronizaron ' + data.data.synced + ' de ' + data.data.total + ' registros.' + errMsg;
+                            }
                         } else {
                             resultBox.style.background = '#fef2f2';
                             resultBox.style.color = '#991b1b';
@@ -715,28 +917,47 @@ class Admin_Page {
 
     private function render_detail_view( $id ) {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'obs_survey_submissions';
-        $sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $id ), ARRAY_A );
+        $type = isset( $_GET['type'] ) ? sanitize_key( $_GET['type'] ) : '';
+        $sub  = null;
+
+        if ( 'short' === $type || 'cancer_mama_corta' === $type ) {
+            $sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}obs_survey_short_submissions WHERE id = %d", $id ), ARRAY_A );
+        } elseif ( 'orig' === $type ) {
+            $sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}obs_survey_submissions WHERE id = %d", $id ), ARRAY_A );
+        }
+
+        if ( ! $sub ) {
+            $sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}obs_survey_short_submissions WHERE id = %d", $id ), ARRAY_A );
+        }
+        if ( ! $sub ) {
+            $sub = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}obs_survey_submissions WHERE id = %d", $id ), ARRAY_A );
+        }
 
         if ( ! $sub ) {
             wp_die( 'Registro no encontrado.' );
         }
 
-        $responses = json_decode( $sub['responses_json'], true ) ?: array();
-        $questions_map = Google_Sheets::get_questions_map();
-        $sync_url = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] ), 'obs_sync_single_' . $sub['id'] );
+        $responses     = json_decode( $sub['responses_json'], true ) ?: array();
+        $is_short      = ( 'cancer_mama_corta' === ( $sub['survey_type'] ?? '' ) );
+        $questions_map = $is_short ? Google_Sheets::get_questions_map_short() : Google_Sheets::get_questions_map();
+        $src_param     = $is_short ? 'short' : 'orig';
+        $sync_url      = wp_nonce_url( admin_url( 'admin.php?page=observatorio-surveys&action=sync_single&id=' . $sub['id'] . '&type=' . $src_param ), 'obs_sync_single_' . $sub['id'] );
         ?>
         <div class="wrap">
-            <h1 class="wp-heading-inline">Detalle de Encuesta #<?php echo esc_html( $sub['id'] ); ?></h1>
+            <h1 class="wp-heading-inline">Detalle de Encuesta #<?php echo esc_html( $sub['id'] ); ?> <?php if ( $is_short ) : ?><span style="background: #381e72; color: #fff; font-size: 13px; padding: 3px 10px; border-radius: 12px; font-weight: normal; vertical-align: middle;">Encuesta Corta</span><?php endif; ?></h1>
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=observatorio-surveys' ) ); ?>" class="button" style="margin-left: 10px;">← Volver al Listado</a>
             <hr class="wp-header-end">
 
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-top: 20px;">
                 <!-- Datos Generales -->
                 <div style="background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    <h3 style="margin-top: 0; border-bottom: 2px solid #381e72; padding-bottom: 8px; color: #381e72;">Datos del Paciente</h3>
+                    <h3 style="margin-top: 0; border-bottom: 2px solid #381e72; padding-bottom: 8px; color: #381e72;">Datos del Perfil</h3>
                     <table class="widefat" style="border: none;">
                         <tbody>
+                            <tr>
+                                <td><strong>Tipo:</strong></td>
+                                <td><?php echo esc_html( $is_short ? 'Encuesta Corta ([short_survey])' : 'Encuesta Completa' ); ?></td>
+                            </tr>
                             <tr>
                                 <td><strong>Estado Encuesta:</strong></td>
                                 <td>
@@ -751,13 +972,17 @@ class Admin_Page {
                                     <?php endif; ?>
                                 </td>
                             </tr>
+                            <?php if ( ! $is_short ) : ?>
                             <tr><td><strong>Nombres:</strong></td><td><?php echo esc_html( $sub['first_name'] ); ?></td></tr>
                             <tr><td><strong>Apellidos:</strong></td><td><?php echo esc_html( $sub['last_name'] ); ?></td></tr>
                             <tr><td><strong>Edad:</strong></td><td><?php echo esc_html( $sub['age'] ); ?> años</td></tr>
                             <tr><td><strong>Celular:</strong></td><td><?php echo esc_html( $sub['phone'] ); ?></td></tr>
                             <tr><td><strong>Correo:</strong></td><td><?php echo esc_html( $sub['email'] ); ?></td></tr>
+                            <?php else : ?>
+                            <tr><td><strong>Identificación:</strong></td><td><em style="color: #64748b;">Anónima (Sin datos de contacto personal)</em></td></tr>
+                            <?php endif; ?>
                             <tr><td><strong>Región:</strong></td><td><?php echo esc_html( $sub['region'] ); ?></td></tr>
-                            <tr><td><strong>Paciente Actual:</strong></td><td><?php echo esc_html( $sub['is_current_patient'] ); ?></td></tr>
+                            <tr><td><strong>Paciente o Cuidador:</strong></td><td><?php echo esc_html( $sub['is_current_patient'] ); ?></td></tr>
                             <tr><td><strong>Sistema Salud:</strong></td><td><?php echo esc_html( $sub['health_system'] ); ?></td></tr>
                             <tr><td><strong>Edad Diag.:</strong></td><td><?php echo esc_html( $sub['age_diagnosis'] ); ?></td></tr>
                             <tr><td><strong>Fecha:</strong></td><td><?php echo esc_html( $sub['created_at'] ); ?></td></tr>

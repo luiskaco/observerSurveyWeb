@@ -38,9 +38,15 @@ class Rest_Controller {
         $table_name = $wpdb->prefix . 'obs_survey_submissions';
         $now = current_time( 'mysql' );
 
-        $submission_id = ! empty( $params['submission_id'] ) ? absint( $params['submission_id'] ) : 0;
-        $step          = ! empty( $params['step'] ) ? max( 1, min( 6, absint( $params['step'] ) ) ) : 1;
         $survey_type   = ! empty( $params['survey_type'] ) ? sanitize_key( $params['survey_type'] ) : 'cancer_mama_journey';
+        $is_short      = ( 'cancer_mama_corta' === $survey_type );
+        $max_step      = $is_short ? 4 : 6;
+        $submission_id = ! empty( $params['submission_id'] ) ? absint( $params['submission_id'] ) : 0;
+        $step          = ! empty( $params['step'] ) ? max( 1, min( $max_step, absint( $params['step'] ) ) ) : 1;
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . ( $is_short ? 'obs_survey_short_submissions' : 'obs_survey_submissions' );
+        $now        = current_time( 'mysql' );
 
         $first_name = isset( $params['first_name'] ) ? self::format_title_case( sanitize_text_field( $params['first_name'] ) ) : '';
         $last_name  = isset( $params['last_name'] ) ? self::format_title_case( sanitize_text_field( $params['last_name'] ) ) : '';
@@ -77,15 +83,17 @@ class Rest_Controller {
                 'responses_json'    => wp_json_encode( $merged_responses ),
             );
 
-            if ( ! empty( $first_name ) ) $update_data['first_name'] = $first_name;
-            if ( ! empty( $last_name ) ) $update_data['last_name'] = $last_name;
-            if ( $age > 0 ) $update_data['age'] = $age;
-            if ( ! empty( $phone ) ) $update_data['phone'] = $phone;
-            if ( ! empty( $email ) ) $update_data['email'] = $email;
-            if ( ! empty( $region ) ) $update_data['region'] = $region;
+            if ( ! $is_short ) {
+                if ( ! empty( $first_name ) ) $update_data['first_name'] = $first_name;
+                if ( ! empty( $last_name ) )  $update_data['last_name']  = $last_name;
+                if ( $age > 0 )               $update_data['age']        = $age;
+                if ( ! empty( $phone ) )      $update_data['phone']      = $phone;
+                if ( ! empty( $email ) )      $update_data['email']      = $email;
+            }
+            if ( ! empty( $region ) )     $update_data['region']             = $region;
             if ( ! empty( $is_patient ) ) $update_data['is_current_patient'] = $is_patient;
-            if ( ! empty( $health_sys ) ) $update_data['health_system'] = $health_sys;
-            if ( ! empty( $age_diag ) ) $update_data['age_diagnosis'] = $age_diag;
+            if ( ! empty( $health_sys ) ) $update_data['health_system']      = $health_sys;
+            if ( ! empty( $age_diag ) )   $update_data['age_diagnosis']      = $age_diag;
 
             $wpdb->update( $table_name, $update_data, array( 'id' => $submission_id ) );
 
@@ -108,28 +116,52 @@ class Rest_Controller {
             ), 200 );
         } else {
             // Nuevo registro inicial (in_progress)
-            $insert_data = array(
-                'survey_type'        => $survey_type,
-                'consent_accepted'   => 0,
-                'first_name'         => $first_name,
-                'last_name'          => $last_name,
-                'age'                => $age,
-                'phone'              => $phone,
-                'email'              => $email,
-                'region'             => $region,
-                'is_current_patient' => $is_patient,
-                'health_system'      => $health_sys,
-                'age_diagnosis'      => $age_diag,
-                'responses_json'     => wp_json_encode( $sanitized_responses ),
-                'ip_address'         => $ip_address,
-                'user_agent'         => $user_agent,
-                'status'             => 'in_progress',
-                'last_step_reached'  => $step,
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            );
+            if ( $is_short ) {
+                $insert_data = array(
+                    'survey_type'        => $survey_type,
+                    'consent_accepted'   => 0,
+                    'region'             => $region,
+                    'is_current_patient' => $is_patient,
+                    'health_system'      => $health_sys,
+                    'age_diagnosis'      => $age_diag,
+                    'responses_json'     => wp_json_encode( $sanitized_responses ),
+                    'ip_address'         => $ip_address,
+                    'user_agent'         => $user_agent,
+                    'status'             => 'in_progress',
+                    'last_step_reached'  => $step,
+                    'created_at'         => $now,
+                    'updated_at'         => $now,
+                );
+            } else {
+                $insert_data = array(
+                    'survey_type'        => $survey_type,
+                    'consent_accepted'   => 0,
+                    'first_name'         => $first_name,
+                    'last_name'          => $last_name,
+                    'age'                => $age,
+                    'phone'              => $phone,
+                    'email'              => $email,
+                    'region'             => $region,
+                    'is_current_patient' => $is_patient,
+                    'health_system'      => $health_sys,
+                    'age_diagnosis'      => $age_diag,
+                    'responses_json'     => wp_json_encode( $sanitized_responses ),
+                    'ip_address'         => $ip_address,
+                    'user_agent'         => $user_agent,
+                    'status'             => 'in_progress',
+                    'last_step_reached'  => $step,
+                    'created_at'         => $now,
+                    'updated_at'         => $now,
+                );
+            }
 
             $inserted = $wpdb->insert( $table_name, $insert_data );
+            if ( false === $inserted ) {
+                // Autocuración: si la tabla no existe en el hosting, activar y reintentar
+                Activator::activate();
+                $inserted = $wpdb->insert( $table_name, $insert_data );
+            }
+
             if ( false !== $inserted ) {
                 $submission_id = $wpdb->insert_id;
                 $insert_data['id'] = $submission_id;
@@ -182,29 +214,41 @@ class Rest_Controller {
         $consent     = ! empty( $params['consent_accepted'] ) ? 1 : 0;
         $survey_type = ! empty( $params['survey_type'] ) ? sanitize_key( $params['survey_type'] ) : 'cancer_mama_journey';
 
-        // Validaciones básicas de backend
+        // Validaciones básicas de backend según tipo de encuesta
         $errors = array();
-        if ( empty( $first_name ) ) {
-            $errors['first_name'] = 'El nombre es obligatorio.';
-        }
-        if ( empty( $last_name ) ) {
-            $errors['last_name'] = 'El apellido es obligatorio.';
-        }
-        if ( empty( $age ) || $age < 10 || $age > 120 ) {
-            $errors['age'] = 'Por favor ingrese una edad válida.';
-        }
-        $phone_digits = preg_replace( '/\D/', '', $phone_raw );
-        if ( empty( $phone_digits ) || strlen( $phone_digits ) < 9 ) {
-            $errors['phone'] = 'El celular es obligatorio y debe tener al menos 9 dígitos.';
-        }
-        if ( empty( $email ) || ! is_email( $email ) ) {
-            $errors['email'] = 'Por favor ingrese un correo electrónico válido.';
-        }
-        if ( empty( $region ) ) {
-            $errors['region'] = 'La región de residencia es obligatoria.';
-        }
-        if ( ! $consent ) {
-            $errors['consent_accepted'] = 'Debe aceptar la autorización de uso anonimizado de datos.';
+
+        if ( 'cancer_mama_corta' === $survey_type ) {
+            // En encuesta corta los datos de contacto personal se eliminan (encuesta anónima)
+            if ( empty( $region ) ) {
+                $errors['region'] = 'La región de residencia es obligatoria.';
+            }
+            if ( ! $consent ) {
+                $errors['consent_accepted'] = 'Debe aceptar la autorización de uso anonimizado de datos.';
+            }
+        } else {
+            // Encuesta original completa
+            if ( empty( $first_name ) ) {
+                $errors['first_name'] = 'El nombre es obligatorio.';
+            }
+            if ( empty( $last_name ) ) {
+                $errors['last_name'] = 'El apellido es obligatorio.';
+            }
+            if ( empty( $age ) || $age < 10 || $age > 120 ) {
+                $errors['age'] = 'Por favor ingrese una edad válida.';
+            }
+            $phone_digits = preg_replace( '/\D/', '', $phone_raw );
+            if ( empty( $phone_digits ) || strlen( $phone_digits ) < 9 ) {
+                $errors['phone'] = 'El celular es obligatorio y debe tener al menos 9 dígitos.';
+            }
+            if ( empty( $email ) || ! is_email( $email ) ) {
+                $errors['email'] = 'Por favor ingrese un correo electrónico válido.';
+            }
+            if ( empty( $region ) ) {
+                $errors['region'] = 'La región de residencia es obligatoria.';
+            }
+            if ( ! $consent ) {
+                $errors['consent_accepted'] = 'Debe aceptar la autorización de uso anonimizado de datos.';
+            }
         }
 
         if ( ! empty( $errors ) ) {
@@ -225,8 +269,9 @@ class Rest_Controller {
 
         // Guardar o actualizar en BD
         global $wpdb;
-        $table_name = $wpdb->prefix . 'obs_survey_submissions';
-        $now = current_time( 'mysql' );
+        $is_short   = ( 'cancer_mama_corta' === $survey_type );
+        $table_name = $wpdb->prefix . ( $is_short ? 'obs_survey_short_submissions' : 'obs_survey_submissions' );
+        $now        = current_time( 'mysql' );
 
         $existing = null;
         if ( $submission_id > 0 ) {
@@ -237,51 +282,90 @@ class Rest_Controller {
             $prev_responses = json_decode( $existing['responses_json'], true ) ?: array();
             $merged_responses = array_merge( $prev_responses, $sanitized_responses );
 
-            $update_data = array(
-                'survey_type'        => $survey_type,
-                'consent_accepted'   => $consent,
-                'first_name'         => $first_name,
-                'last_name'          => $last_name,
-                'age'                => $age,
-                'phone'              => $phone,
-                'email'              => $email,
-                'region'             => $region,
-                'is_current_patient' => $is_patient,
-                'health_system'      => $health_sys,
-                'age_diagnosis'      => $age_diag,
-                'responses_json'     => wp_json_encode( $merged_responses ),
-                'status'             => 'completed',
-                'last_step_reached'  => 6,
-                'updated_at'         => $now,
-            );
+            if ( $is_short ) {
+                $update_data = array(
+                    'survey_type'        => $survey_type,
+                    'consent_accepted'   => $consent,
+                    'region'             => $region,
+                    'is_current_patient' => $is_patient,
+                    'health_system'      => $health_sys,
+                    'age_diagnosis'      => $age_diag,
+                    'responses_json'     => wp_json_encode( $merged_responses ),
+                    'status'             => 'completed',
+                    'last_step_reached'  => 4,
+                    'updated_at'         => $now,
+                );
+            } else {
+                $update_data = array(
+                    'survey_type'        => $survey_type,
+                    'consent_accepted'   => $consent,
+                    'first_name'         => $first_name,
+                    'last_name'          => $last_name,
+                    'age'                => $age,
+                    'phone'              => $phone,
+                    'email'              => $email,
+                    'region'             => $region,
+                    'is_current_patient' => $is_patient,
+                    'health_system'      => $health_sys,
+                    'age_diagnosis'      => $age_diag,
+                    'responses_json'     => wp_json_encode( $merged_responses ),
+                    'status'             => 'completed',
+                    'last_step_reached'  => 6,
+                    'updated_at'         => $now,
+                );
+            }
 
             $wpdb->update( $table_name, $update_data, array( 'id' => $submission_id ) );
             $data = array_merge( $existing, $update_data );
             $data['id'] = $submission_id;
             $sanitized_responses = $merged_responses;
         } else {
-            $data = array(
-                'survey_type'        => $survey_type,
-                'consent_accepted'   => $consent,
-                'first_name'         => $first_name,
-                'last_name'          => $last_name,
-                'age'                => $age,
-                'phone'              => $phone,
-                'email'              => $email,
-                'region'             => $region,
-                'is_current_patient' => $is_patient,
-                'health_system'      => $health_sys,
-                'age_diagnosis'      => $age_diag,
-                'responses_json'     => wp_json_encode( $sanitized_responses ),
-                'ip_address'         => $ip_address,
-                'user_agent'         => $user_agent,
-                'status'             => 'completed',
-                'last_step_reached'  => 6,
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            );
+            if ( $is_short ) {
+                $data = array(
+                    'survey_type'        => $survey_type,
+                    'consent_accepted'   => $consent,
+                    'region'             => $region,
+                    'is_current_patient' => $is_patient,
+                    'health_system'      => $health_sys,
+                    'age_diagnosis'      => $age_diag,
+                    'responses_json'     => wp_json_encode( $sanitized_responses ),
+                    'ip_address'         => $ip_address,
+                    'user_agent'         => $user_agent,
+                    'status'             => 'completed',
+                    'last_step_reached'  => 4,
+                    'created_at'         => $now,
+                    'updated_at'         => $now,
+                );
+            } else {
+                $data = array(
+                    'survey_type'        => $survey_type,
+                    'consent_accepted'   => $consent,
+                    'first_name'         => $first_name,
+                    'last_name'          => $last_name,
+                    'age'                => $age,
+                    'phone'              => $phone,
+                    'email'              => $email,
+                    'region'             => $region,
+                    'is_current_patient' => $is_patient,
+                    'health_system'      => $health_sys,
+                    'age_diagnosis'      => $age_diag,
+                    'responses_json'     => wp_json_encode( $sanitized_responses ),
+                    'ip_address'         => $ip_address,
+                    'user_agent'         => $user_agent,
+                    'status'             => 'completed',
+                    'last_step_reached'  => 6,
+                    'created_at'         => $now,
+                    'updated_at'         => $now,
+                );
+            }
 
             $inserted = $wpdb->insert( $table_name, $data );
+
+            if ( false === $inserted ) {
+                // Autocuración: si la tabla no existe en el hosting, activar y reintentar
+                Activator::activate();
+                $inserted = $wpdb->insert( $table_name, $data );
+            }
 
             if ( false === $inserted ) {
                 return new \WP_REST_Response( array(

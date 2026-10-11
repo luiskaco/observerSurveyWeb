@@ -50,3 +50,15 @@
 - [x] Reemplazar radio button "Otra región del Perú" por selector `<select>` con todas las regiones del país.
 - [x] Adaptar lógica condicional en `survey-wizard.js`: ocultar derivación solo si es "Lima", mostrar para cualquier otra región seleccionada.
 - [x] Validar compatibilidad e inserción en Google Sheets (`Completo` e `Incompleto`).
+
+## Fase 12: Segunda Encuesta Corta ([short_survey])
+- [x] Definir banco final de preguntas a partir de la revisión del usuario (Word / Markdown), incorporando preguntas solicitadas (Q14, Q17 y Q21).
+- [x] Registrar shortcode `[short_survey]` con soporte de contenedor y formulario dedicado (`templates/survey-container-short.php`).
+- [x] Adaptar motor de guardado progresivo (REST API y frontend `survey-wizard.js`) con aislamiento de `localStorage` (`obs_survey_short_draft`, `obs_survey_short_submission_id`).
+- [x] Sincronización Google Sheets hacia la pestaña configurable (por defecto `EncuestaCorta`) con columna bandera `Estado` (`Incompleto` / `Completo`) mediante upsert por ID.
+- [x] Filtro y vista diferenciada en el panel de administración de WordPress para listar y exportar respuestas de ambas encuestas.
+- [x] Corrección de consulta UNION en listado de WP Admin: resolver error de collations incompatibles (`utf8mb4_unicode_ci` vs `utf8mb4_unicode_520_ci`) y envolver consulta en subquery segura con pestañas de filtro completas.
+- [x] Implementar botón de reinicio de contador para Encuesta Corta en el panel de WP Admin (vía nonce y confirmación de seguridad para reiniciar AUTO_INCREMENT a 1).
+- [x] Reestructurar Encuesta Corta a 4 pasos (Opción A): Paso 1 (Perfil y Lugar de Diagnóstico), Paso 2 (Primera Señal y Exámenes), Paso 3 (Biopsia y Estadio), Paso 4 (Tratamiento y Experiencia), adaptando plantillas, wizard JS, REST API y badges de WP Admin.
+- [x] Optimizar sincronización en lote y diagnóstico de Google Sheets: forzar modo manual y reportar detalle de errores en el panel de administración.
+

@@ -5,6 +5,28 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.9.0] - 2026-10-11
+
+### Changed
+- **Reestructuración de la Encuesta Corta a 4 Pasos:** Optimizado el flujo del formulario `[short_survey]` agrupando secciones para reducir la fricción de navegación:
+  - *Paso 1:* Perfil y Lugar de Diagnóstico (Sección 1 + Bloque A).
+  - *Paso 2:* Primera Señal y Exámenes (Bloque B + Bloque D).
+  - *Paso 3:* Biopsia y Estadio (Bloque F).
+  - *Paso 4:* Tratamiento, Barreras y Experiencia (Bloque I).
+- **Adaptación en Backend y Panel:** Sincronizado el controlador REST (`step-save` hasta paso 4) y el badge de progreso en WP Admin (`⏳ Paso x / 4` para encuesta corta y `⏳ Paso x / 6` para encuesta original).
+- **Cache-Busting & Auto-Upgrade:** Incrementada versión a 1.9.0 para forzar la recarga de scripts/estilos en navegadores y activar migración automática `maybe_upgrade()` en el hosting.
+
+## [1.8.0] - 2026-10-11
+
+### Added
+- **Segunda Encuesta Corta Integrada (`[short_survey]`):** Soporte completo para encuesta corta anonimizada en coexistencia armónica con la encuesta original.
+- **Plantilla Dedicada `templates/survey-container-short.php`:** Paso 1 con perfil/antecedentes sin captura de datos de contacto personales, redacción en 3ra persona ("la paciente / familiar o cuidador") e inclusión de preguntas 14, 17 y 21.
+- **Sincronización a Google Sheets en Pestaña Única (`EncuestaCorta`):** Configurable en WP Admin (`Observatorio Encuestas -> Google Sheets`). Guarda el progreso de pasos con bandera de estado (`Incompleto`) y actualiza a `Completo` al finalizar mediante upsert por ID, sin eliminar filas entre pestañas.
+- **Aislamiento en Frontend (`survey-wizard.js`):** Separación de claves en `localStorage` (`obs_survey_short_draft`, `obs_survey_short_submission_id`) y detección dinámica del tipo de encuesta (`survey_type: cancer_mama_corta`).
+- **Filtros y Métricas en Panel Admin de WordPress:** Pestaña de filtro dedicada *"Solo Encuesta Corta"*, formateo de participante anónima y soporte de exportación segmentada a CSV.
+- **Corrección de Collation en Consultas UNION:** Solucionado el error MySQL 1271 (`Illegal mix of collations for operation 'UNION'`) entre `wp_obs_survey_submissions` (`utf8mb4_unicode_ci`) y `wp_obs_survey_short_submissions` (`utf8mb4_unicode_520_ci`). Se agregó sincronización automática de collation en `class-activator.php` y se encapsuló la consulta en subquery segura.
+- **Botón de Reinicio de Contador para Encuesta Corta:** Agregado botón en la barra superior de acciones de WP Admin protegido por nonces y diálogo de confirmación `confirm()`. Limpia las respuestas de prueba de la tabla `wp_obs_survey_short_submissions` y restablece el `AUTO_INCREMENT` a 1 de forma segura.
+
 ## [1.7.2] - 2026-10-01
 
 ### Changed

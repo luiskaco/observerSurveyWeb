@@ -24,6 +24,7 @@ class Plugin {
         add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_shortcode( 'encuesta_cancer_mama', array( $this, 'render_shortcode' ) );
+        add_shortcode( 'short_survey', array( $this, 'render_shortcode' ) );
 
         if ( is_admin() ) {
             $this->admin_page->register_hooks();
@@ -54,12 +55,15 @@ class Plugin {
     }
 
 
-    public function render_shortcode( $atts = array() ) {
+    public function render_shortcode( $atts = array(), $content = null, $tag = '' ) {
         wp_enqueue_style( 'obs-survey-style' );
         wp_enqueue_script( 'obs-survey-script' );
 
         ob_start();
-        $template_path = OBS_SURVEY_PLUGIN_DIR . 'templates/survey-container.php';
+        $is_short = ( 'short_survey' === $tag ) || ( is_array( $atts ) && isset( $atts['type'] ) && 'short' === $atts['type'] );
+        $template_name = $is_short ? 'templates/survey-container-short.php' : 'templates/survey-container.php';
+        $template_path = OBS_SURVEY_PLUGIN_DIR . $template_name;
+
         if ( file_exists( $template_path ) ) {
             include $template_path;
         }

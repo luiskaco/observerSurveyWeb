@@ -26,11 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return str.toLowerCase().replace(/(?:^|\s|[-'])\S/g, char => char.toUpperCase());
     };
 
+    const surveyTypeEl = form.querySelector('input[name="survey_type"]');
+    const surveyType = surveyTypeEl ? surveyTypeEl.value.trim() : 'cancer_mama_journey';
+    const isShortSurvey = surveyType === 'cancer_mama_corta';
+
     const stepTitles = {
-        1: 'Paso 1 de 6: Antecedentes',
-        2: 'Paso 2 de 6: Lugar de Diagnóstico y Derivación',
-        3: 'Paso 3 de 6: Primera Señal y Consulta',
-        4: 'Paso 4 de 6: Exámenes y Derivación',
+        1: isShortSurvey ? 'Paso 1 de 4: Perfil y Lugar de Diagnóstico' : 'Paso 1 de 6: Antecedentes',
+        2: isShortSurvey ? 'Paso 2 de 4: Primera Señal y Exámenes' : 'Paso 2 de 6: Lugar de Diagnóstico y Derivación',
+        3: isShortSurvey ? 'Paso 3 de 4: Biopsia y Estadio' : 'Paso 3 de 6: Primera Señal y Consulta',
+        4: isShortSurvey ? 'Paso 4 de 4: Tratamiento y Experiencia' : 'Paso 4 de 6: Exámenes y Derivación',
         5: 'Paso 5 de 6: Biopsia y Estadio',
         6: 'Paso 6 de 6: Tratamiento y Experiencia',
     };
@@ -394,8 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Persistencia de Borrador y Autosave Progresivo ---
-    const STORAGE_KEY = 'obs_survey_mama_draft';
-    const SUBMISSION_ID_KEY = 'obs_survey_submission_id';
+    const STORAGE_KEY = isShortSurvey ? 'obs_survey_short_draft' : 'obs_survey_mama_draft';
+    const SUBMISSION_ID_KEY = isShortSurvey ? 'obs_survey_short_submission_id' : 'obs_survey_submission_id';
     let currentSubmissionId = localStorage.getItem(SUBMISSION_ID_KEY) || null;
 
     function saveDraft() {
@@ -443,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveStepProgress(stepNumber) {
         const formData = new FormData(form);
         const payload = {
-            survey_type: 'cancer_mama_journey',
+            survey_type: surveyType,
             step: stepNumber,
             submission_id: currentSubmissionId ? parseInt(currentSubmissionId, 10) : null,
             hp_field: formData.get('hp_field') || '',
@@ -538,6 +542,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const MILESTONES_DATA_SHORT = {
+        2: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#d81b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>`,
+            title: '¡Paso 1 completado! 💜',
+            desc: 'Tu experiencia ayuda a que más mujeres conozcan la importancia de una detección temprana y oportuna.'
+        },
+        3: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#381e72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="7"></circle>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+            </svg>`,
+            title: '¡Gran avance! Vas al 50% 🌟',
+            desc: 'Comprender los tiempos de derivación y exámenes permite documentar las dificultades en cada región.'
+        },
+        4: {
+            iconSvg: `<svg viewBox="0 0 24 24" class="obs-ms-svg" fill="none" stroke="#d81b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>`,
+            title: '¡Último esfuerzo para finalizar! 🎉',
+            desc: 'Solo unas preguntas finales sobre el tratamiento para registrar formalmente tu valioso testimonio.'
+        }
+    };
+
     const milestoneBanner = document.getElementById('obs-milestone-banner');
     const msIcon = document.getElementById('obs-ms-icon');
     const msTitle = document.getElementById('obs-ms-title');
@@ -546,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let milestoneTimer = null;
 
     function showMilestoneBanner(stepNumber) {
-        const data = MILESTONES_DATA[stepNumber];
+        const data = isShortSurvey ? (MILESTONES_DATA_SHORT[stepNumber] || null) : MILESTONES_DATA[stepNumber];
         if (!data || !milestoneBanner) {
             hideMilestoneBanner(true);
             return;
@@ -643,7 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Preparar payload
         const formData = new FormData(form);
         const payload = {
-            survey_type: 'cancer_mama_journey',
+            survey_type: surveyType,
             submission_id: currentSubmissionId ? parseInt(currentSubmissionId, 10) : null,
             hp_field: formData.get('hp_field') || '',
             first_name: toTitleCase((formData.get('first_name') || '').trim()),
