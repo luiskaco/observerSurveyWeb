@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.9.1] - 2026-10-14
+
+### Added / Fixed
+- **Lógica Condicional Completa en Wizard:**
+  - `Q9` (*¿Solicitaron exámenes?*): Si responde "No", se ocultan automáticamente las preguntas hijas Q10 a Q14.
+  - `Q13` (*¿Dificultades en exámenes?*): Si responde "No", se oculta Q14 (*Principal dificultad*), evitando contradicciones y requerimientos obligatorios redundantes.
+  - `Q15` (*¿Derivación a otro centro?*): Si responde "No", se ocultan automáticamente Q16 (*Tiempo hasta ser atendida*) y Q17 (*Cambio de sistema público/privado*).
+  - `Q18` (*¿Indicaron biopsia?*): Si responde "No", se ocultan automáticamente Q19 (*Tiempo de realización*), Q20 (*Tiempo de resultado*) y Q21 (*Establecimiento de biopsia*).
+- **Limpieza de Datos Fantasma:** Se asegura la invocación de `clearInputsInside()` al desmarcar opciones detonantes para mantener la integridad de respuestas en base de datos y Google Sheets.
+- **Incremento de Versión:** Actualización a `1.9.1` para forzar la invalidación de caché de scripts en navegadores y servidores en producción.
+
 ## [1.9.0] - 2026-10-11
 
 ### Changed

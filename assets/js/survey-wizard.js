@@ -96,6 +96,74 @@ document.addEventListener('DOMContentLoaded', () => {
             radio.addEventListener('change', handleQ2Change);
         });
 
+        // Solicitud de exámenes (Q9 -> Q10-Q14)
+        const q9Radios = form.querySelectorAll('input[name="q9_solicitaron_examenes"]');
+        const blockExamenes = document.getElementById('block-examenes-solicitados');
+        const handleQ9Change = () => {
+            const checkedQ9 = form.querySelector('input[name="q9_solicitaron_examenes"]:checked');
+            const val = checkedQ9 ? checkedQ9.value.trim() : '';
+            if (val === 'Sí' || val === 'Si') {
+                if (blockExamenes) blockExamenes.style.display = 'block';
+            } else {
+                if (blockExamenes) {
+                    blockExamenes.style.display = 'none';
+                    clearInputsInside(blockExamenes);
+                }
+            }
+        };
+        q9Radios.forEach(radio => radio.addEventListener('change', handleQ9Change));
+
+        // Dificultad en exámenes (Q13 -> Q14)
+        const q13Radios = form.querySelectorAll('input[name="q13_dificultad_examenes"]');
+        const blockQ14 = document.getElementById('block-q14');
+        const handleQ13Change = () => {
+            const checkedQ13 = form.querySelector('input[name="q13_dificultad_examenes"]:checked');
+            const val = checkedQ13 ? checkedQ13.value.trim() : '';
+            if (val === 'Sí' || val === 'Si') {
+                if (blockQ14) blockQ14.style.display = 'block';
+            } else {
+                if (blockQ14) {
+                    blockQ14.style.display = 'none';
+                    clearInputsInside(blockQ14);
+                }
+            }
+        };
+        q13Radios.forEach(radio => radio.addEventListener('change', handleQ13Change));
+
+        // Derivación general (Q15 -> Q16, Q17)
+        const q15Radios = form.querySelectorAll('input[name="q15_derivaron_otro_establecimiento"]');
+        const blockDerivacionGen = document.getElementById('block-derivacion-general');
+        const handleQ15Change = () => {
+            const checkedQ15 = form.querySelector('input[name="q15_derivaron_otro_establecimiento"]:checked');
+            const val = checkedQ15 ? checkedQ15.value.trim() : '';
+            if (val === 'Sí' || val === 'Si') {
+                if (blockDerivacionGen) blockDerivacionGen.style.display = 'block';
+            } else {
+                if (blockDerivacionGen) {
+                    blockDerivacionGen.style.display = 'none';
+                    clearInputsInside(blockDerivacionGen);
+                }
+            }
+        };
+        q15Radios.forEach(radio => radio.addEventListener('change', handleQ15Change));
+
+        // Biopsia (Q18 -> Q19, Q20, Q21)
+        const q18Radios = form.querySelectorAll('input[name="q18_indicaron_biopsia"]');
+        const blockBiopsiaDet = document.getElementById('block-biopsia-detalle');
+        const handleQ18Change = () => {
+            const checkedQ18 = form.querySelector('input[name="q18_indicaron_biopsia"]:checked');
+            const val = checkedQ18 ? checkedQ18.value.trim() : '';
+            if (val === 'Sí' || val === 'Si') {
+                if (blockBiopsiaDet) blockBiopsiaDet.style.display = 'block';
+            } else {
+                if (blockBiopsiaDet) {
+                    blockBiopsiaDet.style.display = 'none';
+                    clearInputsInside(blockBiopsiaDet);
+                }
+            }
+        };
+        q18Radios.forEach(radio => radio.addEventListener('change', handleQ18Change));
+
         // Subtipo de cáncer (Q22 -> Q23)
         const q22Radios = form.querySelectorAll('input[name="q22_informaron_subtipo"]');
         const blockQ23 = document.getElementById('block-q23');
@@ -139,6 +207,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ejecución inicial de comprobación
         handleQ1Change();
         handleQ2Change();
+        handleQ9Change();
+        handleQ13Change();
+        handleQ15Change();
+        handleQ18Change();
         handleQ22Change();
         handleQ26Change();
     }

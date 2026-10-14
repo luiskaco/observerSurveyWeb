@@ -471,18 +471,19 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="obs-field-error"></span>
                 </div>
 
-                <div class="obs-field-group" id="block-q14">
+                <!-- Bloque condicional: Solo si tuvo dificultad (Q13 = Sí) -->
+                <div class="obs-field-group obs-conditional-block" id="block-q14" style="display: none;">
                     <label>14. ¿Cuál fue la principal dificultad? <span class="req">*</span></label>
                     <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No había citas disponibles" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No había citas disponibles</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="La cita estaba disponible después de mucho tiempo" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">La cita estaba disponible después de mucho tiempo</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No había equipos disponibles" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No había equipos disponibles</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No había personal especializado" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No había personal especializado</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="Problemas con el seguro o autorización" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Problemas con el seguro o autorización</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="Tuve que pagar el examen" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Tuve que pagar el examen</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="El establecimiento estaba lejos" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">El establecimiento estaba lejos</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="Otra" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Otra</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No corresponde" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No había citas disponibles"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No había citas disponibles</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="La cita estaba disponible después de mucho tiempo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">La cita estaba disponible después de mucho tiempo</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No había equipos disponibles"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No había equipos disponibles</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No había personal especializado"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No había personal especializado</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="Problemas con el seguro o autorización"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Problemas con el seguro o autorización</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="Tuve que pagar el examen"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Tuve que pagar el examen</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="El establecimiento estaba lejos"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">El establecimiento estaba lejos</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="Otra"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Otra</span></span></label>
+                        <label class="obs-choice-card"><input type="radio" name="q14_principal_dificultad_examenes" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
                     </div>
                     <span class="obs-field-error"></span>
                 </div>
@@ -497,32 +498,35 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="obs-field-error"></span>
                 </div>
 
-                <div class="obs-field-group" id="block-q16">
-                    <label>16. Si te derivaron, ¿cuánto tiempo pasó hasta que lograste ser atendida? <span class="req">*</span></label>
-                    <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Menos de 1 semana" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Menos de 1 semana</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="1–2 semanas" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–2 semanas</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="3–4 semanas" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–4 semanas</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="1–3 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–3 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="3–6 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–6 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Más de 6 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 6 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Más de 9 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 9 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Más de 1 año" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 1 año</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="No corresponde" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                <!-- Bloque condicional: Solo si fue derivada (Q15 = Sí) -->
+                <div class="obs-conditional-block" id="block-derivacion-general" style="display: none;">
+                    <div class="obs-field-group" id="block-q16">
+                        <label>16. Si te derivaron, ¿cuánto tiempo pasó hasta que lograste ser atendida? <span class="req">*</span></label>
+                        <div class="obs-options-grid cols-2">
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Menos de 1 semana"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Menos de 1 semana</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="1–2 semanas"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–2 semanas</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="3–4 semanas"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–4 semanas</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="1–3 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–3 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="3–6 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–6 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Más de 6 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 6 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Más de 9 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 9 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="Más de 1 año"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 1 año</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q16_tiempo_atencion_derivacion" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                        </div>
+                        <span class="obs-field-error"></span>
                     </div>
-                    <span class="obs-field-error"></span>
-                </div>
 
-                <div class="obs-field-group">
-                    <label>17. ¿La derivación implicó pasar de un sistema de atención a otro? <span class="req">*</span></label>
-                    <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="Público → privado" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Público → privado</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="Privado → público" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Privado → público</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No recuerdo" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No corresponde" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                    <div class="obs-field-group">
+                        <label>17. ¿La derivación implicó pasar de un sistema de atención a otro? <span class="req">*</span></label>
+                        <div class="obs-options-grid cols-2">
+                            <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="Público → privado"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Público → privado</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="Privado → público"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Privado → público</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No recuerdo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                        </div>
+                        <span class="obs-field-error"></span>
                     </div>
-                    <span class="obs-field-error"></span>
                 </div>
             </div>
 
@@ -544,46 +548,49 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <span class="obs-field-error"></span>
                 </div>
 
-                <div class="obs-field-group">
-                    <label>19. Desde que te indicaron la biopsia hasta que se realizó, ¿cuánto tiempo pasó? <span class="req">*</span></label>
-                    <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Menos de 1 semana" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Menos de 1 semana</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="1–2 semanas" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–2 semanas</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="3–4 semanas" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–4 semanas</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="1–3 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–3 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="3–6 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–6 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Más de 6 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 6 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Más de 9 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 9 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Más de 1 año" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 1 año</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="No corresponde" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                <!-- Bloque condicional: Solo si le indicaron biopsia (Q18 = Sí) -->
+                <div class="obs-conditional-block" id="block-biopsia-detalle" style="display: none;">
+                    <div class="obs-field-group">
+                        <label>19. Desde que te indicaron la biopsia hasta que se realizó, ¿cuánto tiempo pasó? <span class="req">*</span></label>
+                        <div class="obs-options-grid cols-2">
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Menos de 1 semana"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Menos de 1 semana</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="1–2 semanas"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–2 semanas</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="3–4 semanas"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–4 semanas</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="1–3 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–3 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="3–6 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–6 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Más de 6 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 6 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Más de 9 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 9 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="Más de 1 año"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 1 año</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q19_tiempo_hasta_realizar_biopsia" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                        </div>
+                        <span class="obs-field-error"></span>
                     </div>
-                    <span class="obs-field-error"></span>
-                </div>
 
-                <div class="obs-field-group">
-                    <label>20. Desde que se realizó la biopsia hasta que recibiste el resultado, ¿cuánto tiempo pasó? <span class="req">*</span></label>
-                    <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="Menos de 1 semana" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Menos de 1 semana</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="1–2 semanas" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–2 semanas</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="3–4 semanas" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–4 semanas</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="1–3 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–3 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="3–6 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–6 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="Más de 9 meses" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 9 meses</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="Más de 1 año" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 1 año</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="No corresponde" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                    <div class="obs-field-group">
+                        <label>20. Desde que se realizó la biopsia hasta que recibiste el resultado, ¿cuánto tiempo pasó? <span class="req">*</span></label>
+                        <div class="obs-options-grid cols-2">
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="Menos de 1 semana"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Menos de 1 semana</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="1–2 semanas"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–2 semanas</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="3–4 semanas"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–4 semanas</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="1–3 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">1–3 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="3–6 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">3–6 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="Más de 9 meses"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 9 meses</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="Más de 1 año"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Más de 1 año</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q20_tiempo_resultado_biopsia" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
+                        </div>
+                        <span class="obs-field-error"></span>
                     </div>
-                    <span class="obs-field-error"></span>
-                </div>
 
-                <div class="obs-field-group">
-                    <label>21. ¿En qué tipo de establecimiento se realizó principalmente la biopsia? <span class="req">*</span></label>
-                    <div class="obs-options-grid cols-2">
-                        <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="Público" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Público</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="Privado" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Privado</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="En ambos" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">En ambos</span></span></label>
-                        <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="No recuerdo" required><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
+                    <div class="obs-field-group">
+                        <label>21. ¿En qué tipo de establecimiento se realizó principalmente la biopsia? <span class="req">*</span></label>
+                        <div class="obs-options-grid cols-2">
+                            <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="Público"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Público</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="Privado"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Privado</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="En ambos"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">En ambos</span></span></label>
+                            <label class="obs-choice-card"><input type="radio" name="q21_establecimiento_biopsia" value="No recuerdo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
+                        </div>
+                        <span class="obs-field-error"></span>
                     </div>
-                    <span class="obs-field-error"></span>
                 </div>
 
                 <div class="obs-field-group">
