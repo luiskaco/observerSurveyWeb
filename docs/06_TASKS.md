@@ -61,4 +61,5 @@
 - [x] Implementar botón de reinicio de contador para Encuesta Corta en el panel de WP Admin (vía nonce y confirmación de seguridad para reiniciar AUTO_INCREMENT a 1).
 - [x] Reestructurar Encuesta Corta a 4 pasos (Opción A): Paso 1 (Perfil y Lugar de Diagnóstico), Paso 2 (Primera Señal y Exámenes), Paso 3 (Biopsia y Estadio), Paso 4 (Tratamiento y Experiencia), adaptando plantillas, wizard JS, REST API y badges de WP Admin.
 - [x] Optimizar sincronización en lote y diagnóstico de Google Sheets: forzar modo manual y reportar detalle de errores en el panel de administración.
+- [x] Actualización de opciones de preguntas en Encuesta Corta y Encuesta Larga según documento oficial (`2026_PUPSC_OC_Encuesta_Ruta_del_Paciente.docx`): sincronización de rangos temporales en Q4 (tiempo derivación Lima), Q6 (tiempo búsqueda de atención) y Q36 (tiempo total de la ruta del paciente).
 

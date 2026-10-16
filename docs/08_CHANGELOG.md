@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.9.2] - 2026-10-16
+
+### Changed
+- **Sincronización de Opciones con Documento Oficial (`2026_PUPSC_OC_Encuesta_Ruta_del_Paciente.docx`):**
+  - **Pregunta 4 (Tiempo de espera atención en Lima):** Actualizados rangos a `2-3 meses` y `4 a 6 meses` tanto en Encuesta Corta como en Encuesta Larga.
+  - **Pregunta 6 (Tiempo búsqueda de atención médica):** Actualizados rangos a `2-3 meses` y `4 a 6 meses` en ambas encuestas.
+  - **Pregunta 36 (Tiempo total del recorrido):** Alineada escala temporal completa (`Menos de 1 semana`, `1–4 semanas`, `2-3 meses`, `4 a 6 meses`, `Más de 6 meses`, `Más de 9 meses`, `Más de 1 año`, `Todavía no lo he iniciado`, `No recuerdo`) en ambas encuestas.
+- **Incremento de Versión para Cache-Busting:** Subida de versión a `1.9.2` para garantizar la recarga de plantillas y scripts en producción.
+
 ## [1.9.1] - 2026-10-14
 
 ### Added / Fixed
