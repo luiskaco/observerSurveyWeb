@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.9.3] - 2026-10-16
+
+### Changed
+- **Homologación de Lógica Condicional y Opciones en Encuesta Larga:**
+  - **Pregunta 9 (Solicitud de exámenes):** Se encapsuló el grupo de preguntas Q10 a Q14 dentro de `#block-examenes-solicitados` en el Paso 4, ocultándose dinámicamente si en Q9 se responde "No" o "No recuerdo".
+  - **Sincronización Total de Rangos:** Alineadas las opciones de Q11, Q12, Q19, Q20, Q25, Q29 y Q30 a la escala oficial (`2–3 meses` y `4–6 meses`).
+- **Versión 1.9.3:** Actualizada cabecera y constante del plugin.
+
 ## [1.9.2] - 2026-10-16
 
 ### Changed
