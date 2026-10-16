@@ -5,6 +5,11 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.9.4] - 2026-10-16
+
+### Changed
+- **Incremento de Versión para Despliegue:** Actualización de versión a `1.9.4` para forzar la invalidación de caché de scripts y estilos en entornos de producción.
+
 ## [1.9.3] - 2026-10-16
 
 ### Changed
