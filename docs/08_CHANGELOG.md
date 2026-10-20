@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.1.1] - 2026-10-20
+
+### Changed
+- **Ajuste de Capitalización en Pregunta 2 (`observerMetricsWeb` v1.5.4):**
+  - Modificado el texto de la opción `No corresponde (reside en Lima)` por `No corresponde (Reside en Lima)` en `data.js`, `QUESTION_CANONICAL_ORDER` y `normalizeAnswer()` en `app.js`.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.5.4`.
+
 ## [2.1.0] - 2026-10-20
 
 ### Removed
