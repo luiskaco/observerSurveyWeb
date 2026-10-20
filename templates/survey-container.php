@@ -526,8 +526,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="Privado → público"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">Privado → público</span></span></label>
                             <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No</span></span></label>
                             <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No recuerdo"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No recuerdo</span></span></label>
-                            <label class="obs-choice-card"><input type="radio" name="q17_cambio_sistema" value="No corresponde"><span class="obs-choice-content"><span class="obs-radio-circle"></span><span class="obs-choice-label">No corresponde</span></span></label>
-                        </div>
+                            </div>
                         <span class="obs-field-error"></span>
                     </div>
                 </div>

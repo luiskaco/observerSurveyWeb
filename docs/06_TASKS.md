@@ -62,4 +62,31 @@
 - [x] Reestructurar Encuesta Corta a 4 pasos (Opción A): Paso 1 (Perfil y Lugar de Diagnóstico), Paso 2 (Primera Señal y Exámenes), Paso 3 (Biopsia y Estadio), Paso 4 (Tratamiento y Experiencia), adaptando plantillas, wizard JS, REST API y badges de WP Admin.
 - [x] Optimizar sincronización en lote y diagnóstico de Google Sheets: forzar modo manual y reportar detalle de errores en el panel de administración.
 - [x] Actualización de opciones de preguntas en Encuesta Corta y Encuesta Larga según documento oficial (`2026_PUPSC_OC_Encuesta_Ruta_del_Paciente.docx`): sincronización de rangos temporales en Q4 (tiempo derivación Lima), Q6 (tiempo búsqueda de atención) y Q36 (tiempo total de la ruta del paciente).
+- [x] Homologación de condiciones lógicas entre encuesta corta y larga (ocultamiento de Q10-Q14 si Q9 es No o No recuerdo).
+
+## Fase 13: Normalización y Correlatividad en Visor de Métricas (`observerMetricsWeb`)
+- [x] Implementar catálogo canónico de orden oficial (`QUESTION_CANONICAL_ORDER`) en `app.js` para evitar ordenamiento por frecuencia y respetar la secuencia clínica/cronológica.
+- [x] Normalizar sinónimos históricos y rangos incompatibles en el dataset (`data.js`) y en el visor (`app.js`).
+- [x] Reemplazar textos de estado "Sin respuesta" por "No respondió" en filtros, tablas y gráficos.
+- [x] Eliminar opción obsoleta "No corresponde" de la Pregunta 17 en templates del formulario y catálogo del visor.
+- [x] Implementar cálculo condicional correlativo (`QUESTION_CONDITIONS`): las preguntas derivadas calculan sus porcentajes y métricas sobre la base de personas que cumplieron la condición previa.
+- [x] Unificar opciones de tiempo extremo (`Más de 9 meses` y `Más de 1 año` agrupadas en `Más de 6 meses`).
+- [x] Unificar opciones de tiempo corto en Q6 (`Menos de 1 semana` unificada en `1–7 días`).
+- [x] Forzar presencia correlativa con valor 0 para opciones no seleccionadas (ej. `Estadio I`).
+- [x] Posicionar opciones neutras `No recuerdo` y `No respondió` estrictamente al final en todas las preguntas.
+- [x] Unificar opciones equivalentes de Q23 (Columna AI: Subtipo tumoral informado): consolidar `No me informaron` en `No me lo informaron` en `data.js`, `app.js` e incrementar `OBS_METRICS_VERSION` a `1.3.8`.
+- [x] Adoptar Opción 1 de Universo Global Uniforme: calcular todas las preguntas sobre la base total de encuestados (612 personas), eliminar subconjuntos recortados y badges confusos de "cumplieron la condición", mostrando `No aplica / Sin respuesta` claramente en la distribución. Versión `1.3.9`.
+- [x] Actualizar texto del badge de universo a `Total Encuestadas: X personas`. Versión `1.4.0`.
+- [x] Ocultar badge `No aplica / Sin respuesta` en la cabecera y renombrar `Respondieron:` a `Derivada:` en las preguntas de derivación a Lima (Q3 y Q4). Versión `1.4.1`.
+- [x] Aplicar etiqueta `Derivada:` a todas las preguntas condicionadas del formulario en lugar de `Respondieron:`. Versión `1.4.2`.
+- [x] Implementar barra de filtros fija (`position: sticky; top: 0; z-index: 1000`) tanto en desktop como en mobile, eliminando `overflow-x: hidden` del contenedor principal que impedía el anclaje sticky. Versión `1.4.3`.
+- [x] Revertir comportamiento sticky en la barra de filtros a flujo normal estático (`position: static`) por solicitud del usuario. Versión `1.4.4`.
+- [x] Agregar selector de `Sector` en la barra de filtros (`Público`: Minsa, EsSalud, FFAA [485] vs `Privado`: Seguro Privado, Particular [127]) con integración a chips activos y botón de restablecer. Versión `1.4.5`.
+- [x] Normalizar escala de tiempo acumulativa con "Hasta" en Pregunta 4 (Columna P: Tiempo de espera en Lima): `Hasta 7 días`, `Hasta 15 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses` y `Más de 6 meses` en dataset y visor. Versión `1.4.6`.
+- [x] Eliminar remanente antiguo en `normalizeAnswer()` que revertía `Hasta X` a `1–2 semanas` / `3–4 semanas` / `4 a 6 meses`, consolidando únicamente las opciones canónicas limpias. Versión `1.4.7`.
+- [x] Aplicar escala acumulativa "Hasta" a Pregunta 6 (Columna R: Tiempo hasta buscar atención médica): `El mismo día`, `Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`. Versión `1.4.8`.
+- [x] Extender escala acumulativa "Hasta" a todas las preguntas de tiempos del recorrido (Q7, Q11, Q12, Q16, Q19, Q20, Q25, Q29, Q30 y Q36): unificar en `Hasta 7 días`, `Hasta 15 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses` y `Más de 6 meses`. Versión `1.4.9`.
+- [x] Armonizar y recalcular todos los textos de subtítulo y cajas de análisis clínico de las 43 variables: sincronizar con la escala "Hasta", eliminar referencias a muestras obsoletas (77 pacientes) y reflejar porcentajes exactos sobre la base de 612 encuestadas. Versión `1.5.0`.
+- [x] Modernizar diseño y coherencia del bloque Hero y sus 4 tarjetas KPI: badges institucionales, efecto cristalino glassmorphism (`backdrop-filter: blur(8px)`), hover suave, tipografía de 2rem y porcentajes reactivos consistentes sobre la muestra total de 612 encuestadas. Versión `1.5.1`.
+- [x] Eliminar badges contextuales del encabezado Hero para una vista más limpia y directa del título principal. Versión `1.5.2`.
 

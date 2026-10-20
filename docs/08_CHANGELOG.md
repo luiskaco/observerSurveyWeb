@@ -5,6 +5,165 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.0.9] - 2026-10-20
+
+### Removed
+- **Eliminación de Badges en Encabezado Hero (`observerMetricsWeb` v1.5.2):**
+  - Se retiraron las pastillas/badges superiores del bloque Hero (*Observatorio de Cáncer de Mama* y *Estudio de la Ruta del Paciente*), dejando el título principal como elemento dominante inmediato.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.5.2`.
+
+## [2.0.8] - 2026-10-20
+
+### Changed
+- **Modernización Visual y Coherencia en Bloque Hero y Tarjetas KPI (`observerMetricsWeb` v1.5.1):**
+  - Incorporados badges oficiales de contexto en el encabezado (*Observatorio de Cáncer de Mama* y *Estudio de la Ruta del Paciente*).
+  - Rediseño de las tarjetas KPI con acabado glassmorphism (`backdrop-filter: blur(8px)`), bordes redondeados a 14px, elevación con sombra suave y micro-interacción hover.
+  - Mayor jerarquía visual con números a 2rem (`font-weight: 800`) y mejor contraste en rótulos y subtítulos.
+  - Sincronización y reactividad en tiempo real de los porcentajes y subtítulos de los 4 KPIs referenciados directamente a la muestra total de 612 encuestadas (o base filtrada).
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.5.1`.
+
+## [2.0.7] - 2026-10-20
+
+### Changed
+- **Coherencia y Actualización Integral de Textos de Análisis y Subtítulos (`observerMetricsWeb` v1.5.0):**
+  - Se recalcularon y sincronizaron todas las narrativas en las cajas de análisis (`q.analysis`) y subtítulos (`q.subtitle`) de las 43 variables del visor.
+  - Corrección de menciones de muestras desactualizadas (ej. eliminación del texto "aplica a 77 pacientes" en Q3 y Q27).
+  - Alineación completa de la redacción de tiempos con la nueva escala canónica acumulativa: `Hasta 7 días`, `Hasta 15 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses` y `Más de 6 meses`.
+  - Consistencia porcentual calculada exactamente sobre el universo global de 612 encuestadas.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.5.0`.
+
+## [2.0.6] - 2026-10-20
+
+### Changed
+- **Estandarización Total de Escala "Hasta" en Todas las Preguntas Temporales (`observerMetricsWeb` v1.4.9):**
+  - Aplicada la escala uniforme acumulativa a todas las preguntas de tiempos del recorrido:
+    - **Pregunta 7:** Tiempo primera consulta (`El mismo día`, `Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`).
+    - **Pregunta 11:** Tiempo realizar examen (`Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No corresponde`).
+    - **Pregunta 12:** Tiempo resultado examen (`El mismo día`, `Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No corresponde`).
+    - **Pregunta 16:** Tiempo tras derivación (`Hasta 7 días`, `Hasta 15 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No corresponde`).
+    - **Pregunta 19:** Tiempo biopsia (`Hasta 7 días`, `Hasta 15 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No corresponde`).
+    - **Pregunta 20:** Tiempo resultado biopsia (`Hasta 7 días`, `Hasta 15 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No corresponde`).
+    - **Pregunta 25:** Tiempo estudios estadio (`Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No recuerdo`, `No corresponde`).
+    - **Pregunta 29:** Tiempo confirmación a indicación (`Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `No recuerdo`).
+    - **Pregunta 30:** Tiempo indicación a inicio (`Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `Todavía no lo he iniciado`, `No recuerdo`).
+    - **Pregunta 36:** Tiempo total recorrido (`Hasta 7 días`, `Hasta 30 días`, `Hasta 3 meses`, `Hasta 6 meses`, `Más de 6 meses`, `Todavía no lo he iniciado`, `No recuerdo`).
+  - Actualizado de forma integral en `data.js`, `QUESTION_CANONICAL_ORDER` y `normalizeAnswer()` en `app.js`.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.9`.
+
+## [2.0.5] - 2026-10-20
+
+### Changed
+- **Escala de Tiempos Acumulativa "Hasta" en Pregunta 6 (`observerMetricsWeb` v1.4.8):**
+  - Aplicada la misma convención de escala a la Pregunta 6 (Tiempo hasta buscar atención médica - Columna R):
+    - `El mismo día`: 56 personas (9.2%)
+    - `Hasta 7 días`: 219 personas (35.8%)
+    - `Hasta 30 días`: 143 personas (23.4%)
+    - `Hasta 3 meses`: 112 personas (18.3%)
+    - `Hasta 6 meses`: 27 personas (4.4%)
+    - `Más de 6 meses`: 54 personas (8.8%)
+    - `No respondió`: 1 persona (0.2%)
+  - Actualizado en `data.js`, catálogo canónico `QUESTION_CANONICAL_ORDER['R']` y normalizador en `app.js`.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.8`.
+
+## [2.0.4] - 2026-10-20
+
+### Fixed
+- **Eliminación de Nombres Duplicados Antiguos en Pregunta 4 (`observerMetricsWeb` v1.4.7):**
+  - Se corrigió el mapeo de normalización en `app.js` que estaba reconvirtiendo las opciones a los nombres viejos (`1–2 semanas`, `3–4 semanas`, `4 a 6 meses`).
+  - Ahora todas las respuestas se asignan y contabilizan de forma limpia y exclusiva en la nueva escala:
+    - `Hasta 7 días`: 18 personas (2.9%)
+    - `Hasta 15 días`: 5 personas (0.8%)
+    - `Hasta 30 días`: 42 personas (6.9%)
+    - `Hasta 3 meses`: 27 personas (4.4%)
+    - `Hasta 6 meses`: 13 personas (2.1%)
+    - `Más de 6 meses`: 10 personas (1.6%)
+    - `No corresponde`: 497 personas (81.2%)
+  - Quedan eliminadas las filas repetidas y los ceros artificiales.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.7`.
+
+## [2.0.3] - 2026-10-20
+
+### Changed
+- **Escala de Tiempos con Límite Acumulativo "Hasta" en Pregunta 4 (`observerMetricsWeb` v1.4.6):**
+  - Se normalizaron las opciones de tiempo en la Pregunta 4 (Tiempo de espera atención en Lima - Columna P):
+    - `Menos de 1 semana` $\rightarrow$ `Hasta 7 días` (18 personas)
+    - `1–2 semanas` $\rightarrow$ `Hasta 15 días` (5 personas)
+    - `3–4 semanas` $\rightarrow$ `Hasta 30 días` (42 personas)
+    - `2-3 meses` $\rightarrow$ `Hasta 3 meses` (27 personas)
+    - `4 a 6 meses` $\rightarrow$ `Hasta 6 meses` (13 personas)
+    - `Más de 6 meses` (10 personas)
+    - `No corresponde` (497 personas)
+  - Actualizado en `data.js`, `QUESTION_CANONICAL_ORDER` y `normalizeAnswer()` en `app.js`.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.6`.
+
+## [2.0.2] - 2026-10-20
+
+### Added
+- **Filtro de Sector (Público vs Privado) en Visor (`observerMetricsWeb` v1.4.5):**
+  - Incorporado nuevo selector `Sector` en la barra de controles con las opciones:
+    - *Todos los Sectores* (612 personas)
+    - *Público* (485 personas: Minsa, EsSalud, FFAA)
+    - *Privado* (127 personas: Seguro Privado, Particular)
+  - Filtro reactivo conectado con KPIs, conteo de muestra, chips de filtros activos y botón "Restablecer".
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.5`.
+
+## [2.0.1] - 2026-10-20
+
+### Changed
+- **Reversión de Barra de Filtros a Flujo Normal (`observerMetricsWeb` v1.4.4):**
+  - Se retiró `position: sticky` de `.filter-bar` dejándolo estático (`position: static`) en desktop y mobile.
+  - Se restauró la protección `overflow-x: hidden` en el envoltorio general.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.4`.
+
+## [2.0.0] - 2026-10-20
+
+### Changed
+- **Barra de Filtros Sticky Persistente al Scrollear (`observerMetricsWeb` v1.4.3):**
+  - Se eliminó `overflow-x: hidden` de `.obs-metrics-wrapper` para restaurar el contexto de desplazamiento nativo de la ventana, permitiendo que `position: sticky` funcione sin bloqueos.
+  - Se configuró `.filter-bar` con `position: -webkit-sticky; position: sticky; top: 0; z-index: 1000;` con soporte desktop y mobile.
+  - Sombra y difuminado de fondo (`backdrop-filter: blur(10px)`) para legibilidad durante el scroll sobre las tarjetas.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.3`.
+
+## [1.9.9] - 2026-10-20
+
+### Changed
+- **Etiqueta "Derivada:" en Preguntas Condicionadas (`observerMetricsWeb` v1.4.2):**
+  - Se configuró el conjunto de preguntas subordinadas/condicionadas (`CONDITIONAL_QUESTION_COLS`: Q2, Q3, Q4, Q10–Q14, Q16, Q17, Q19, Q20, Q21, Q23, Q25, Q27).
+  - En todas las preguntas condicionadas se sustituyó dinámicamente la etiqueta `Respondieron:` por `Derivada:` para señalar que la muestra responde a una condición previa.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.2`.
+
+## [1.9.8] - 2026-10-20
+
+### Changed
+- **Ajustes de Cabecera en Visor de Métricas (`observerMetricsWeb` v1.4.1):**
+  - Ocultado el badge rojo `No aplica / Sin respuesta: X personas` para evitar ruido visual en las tarjetas.
+  - Personalizado el badge de respuesta en las preguntas de derivación a Lima (Pregunta 3 y Pregunta 4) cambiando `Respondieron:` por `Derivada:`.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.1`.
+
+## [1.9.7] - 2026-10-20
+
+### Changed
+- **Ajuste de Etiqueta de Muestra en Visor (`observerMetricsWeb` v1.4.0):**
+  - Modificado el texto del badge de universo de `Base total:` a `Total Encuestadas: X personas` para mayor claridad conceptual en la lectura de métricas.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.4.0`.
+
+## [1.9.6] - 2026-10-20
+
+### Changed
+- **Universo Global Uniforme en Visor de Métricas (`observerMetricsWeb` v1.3.9):**
+  - Todas las preguntas se calculan ahora siempre sobre la **base total de encuestados** (612 personas o el total resultante de filtros generales).
+  - Se eliminaron las etiquetas confusas de subconjuntos ("Aplica a X personas que cumplieron la condición").
+  - En las preguntas condicionales, los casos no aplicables se integran claramente como `No corresponde` o `No aplica / Sin respuesta` en la distribución.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.3.9`.
+
+## [1.9.5] - 2026-10-20
+
+### Changed
+- **Normalización y Unificación en Visor de Métricas (`observerMetricsWeb` v1.3.8):**
+  - **Pregunta 23 (Subtipo tumoral informado - Columna AI):** Unificadas todas las respuestas variantes `"No me informaron"` a la opción oficial canónica `"No me lo informaron"`, eliminando la fila duplicada en tablas y gráficos del visor.
+  - Actualización directa sobre el dataset estático (`data.js`) y filtro de normalización en tiempo de ejecución (`app.js`).
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.3.8` para invalidación inmediata de caché de navegador.
+
 ## [1.9.4] - 2026-10-16
 
 ### Changed
