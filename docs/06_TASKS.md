@@ -89,4 +89,5 @@
 - [x] Armonizar y recalcular todos los textos de subtítulo y cajas de análisis clínico de las 43 variables: sincronizar con la escala "Hasta", eliminar referencias a muestras obsoletas (77 pacientes) y reflejar porcentajes exactos sobre la base de 612 encuestadas. Versión `1.5.0`.
 - [x] Modernizar diseño y coherencia del bloque Hero y sus 4 tarjetas KPI: badges institucionales, efecto cristalino glassmorphism (`backdrop-filter: blur(8px)`), hover suave, tipografía de 2rem y porcentajes reactivos consistentes sobre la muestra total de 612 encuestadas. Versión `1.5.1`.
 - [x] Eliminar badges contextuales del encabezado Hero para una vista más limpia y directa del título principal. Versión `1.5.2`.
+- [x] Ocultar tarjeta y enlace de Perfil 5 (Columna L: Consentimiento Informado) en el visor de métricas. Versión `1.5.3`.
 

@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.1.0] - 2026-10-20
+
+### Removed
+- **Ocultamiento de Perfil 5 (Consentimiento Informado) en Visor (`observerMetricsWeb` v1.5.3):**
+  - Se filtró la pregunta de consentimiento (`col === 'L'`) en la función `renderDashboard()`, ocultando su tarjeta gráfica y enlace en el índice lateral.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.5.3`.
+
 ## [2.0.9] - 2026-10-20
 
 ### Removed
