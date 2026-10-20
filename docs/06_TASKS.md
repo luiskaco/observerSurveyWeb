@@ -91,4 +91,5 @@
 - [x] Eliminar badges contextuales del encabezado Hero para una vista más limpia y directa del título principal. Versión `1.5.2`.
 - [x] Ocultar tarjeta y enlace de Perfil 5 (Columna L: Consentimiento Informado) en el visor de métricas. Versión `1.5.3`.
 - [x] Normalizar texto en Pregunta 2 (Columna N: Derivada a Lima) cambiando `No corresponde (reside en Lima)` a `No corresponde (Reside en Lima)`. Versión `1.5.4`.
+- [x] Ajustar Preguntas 3 y 4 (O y P): eliminar el item `No corresponde` de sus tablas/gráficos, calcular su `% Universo` exclusivamente sobre la base de personas derivadas (125) y restituir la etiqueta `Respondieron:` en la Pregunta 2 (padre del condicional). Versión `1.5.5`.
 

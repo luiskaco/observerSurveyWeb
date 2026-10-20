@@ -5,6 +5,16 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.1.2] - 2026-10-20
+
+### Changed
+- **Base de Cálculo para Derivadas a Lima en Preguntas 3 y 4 (`observerMetricsWeb` v1.5.5):**
+  - Se excluyó la opción `No corresponde` de las tablas y gráficos en Q3 (Etapa de derivación a Lima, Col `O`) y Q4 (Tiempo de espera en Lima, Col `P`).
+  - El cálculo de `% Universo` en Q3 y Q4 ahora se calcula exclusivamente sobre las pacientes derivadas a Lima (`125` encuestadas que respondieron `Sí` en Q2/Col `N`), actualizando el badge a `Total Derivadas a Lima: X personas`.
+  - La Pregunta 2 (Col `N`: Derivada a Lima), al ser la pregunta padre de la condicional, ahora muestra el rótulo estándar `Respondieron:` en su badge en lugar de `Derivada:`.
+  - Sincronización de los textos de análisis (`analysis`) y subtítulos en `data.js` para reflejar las proporciones exactas respecto a las 125 pacientes derivadas.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.5.5`.
+
 ## [2.1.1] - 2026-10-20
 
 ### Changed
