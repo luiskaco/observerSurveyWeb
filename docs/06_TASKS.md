@@ -93,3 +93,4 @@
 - [x] Normalizar texto en Pregunta 2 (Columna N: Derivada a Lima) cambiando `No corresponde (reside en Lima)` a `No corresponde (Reside en Lima)`. Versión `1.5.4`.
 - [x] Ajustar Preguntas 3 y 4 (O y P): eliminar el item `No corresponde` de sus tablas/gráficos, calcular su `% Universo` exclusivamente sobre la base de personas derivadas (125) y restituir la etiqueta `Respondieron:` en la Pregunta 2 (padre del condicional). Versión `1.5.5`.
 - [x] Homologar Pregunta 1 (Columna M: Lugar de diagnóstico) para replicar exactamente la métrica, dataset y análisis de Región de Residencia (Columna H), eliminando incongruencias de regiones no muestreadas. Versión 1.5.6.
+- [x] Ocultar badge redundante de "Respondieron: XX (YY%)" en todas las tarjetas de preguntas, conservando únicamente el badge de "Total Encuestadas: XX personas". Versión 1.5.7.
