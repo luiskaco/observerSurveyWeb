@@ -97,3 +97,4 @@
 - [x] Renombrar encabezado de columna de tabla a "% Derivado" en preguntas condicionadas con total derivadas (Q3 y Q4) y asegurar que el cálculo de % en tabla y gráficos use exclusivamente la cantidad de derivadas (125). Versión 1.5.8.
 - [x] Extender lógica condicional a todas las preguntas dependientes (Q3, Q4, Q14, Q16, Q17, Q19, Q20, Q25, Q27): excluir "No corresponde" de tablas y gráficos, cambiar encabezado a "% Derivado", calcular el porcentaje y gráficos sobre la base de derivadas y actualizar narrativas de análisis clínico. Versión 1.5.9.
 - [x] Homologar etiqueta de badge en Q3 y Q4 de "Total Derivadas a Lima" a "Total Derivadas" para uniformidad visual. Versión 1.6.0.
+- [x] Calcular el "% Derivado" exactamente sobre el 100% de los datos derivados registrados (base de respuestas válidas de la subpoblación), garantizando que la suma de porcentajes de las opciones totalice el 100.0%. Versión 1.6.1.
