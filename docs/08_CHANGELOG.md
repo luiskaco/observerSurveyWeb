@@ -5,6 +5,26 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.1.3] - 2026-10-20
+
+### Changed
+- **Estandarización Integral de Métricas, Badges y Preguntas Condicionadas (`observerMetricsWeb` v1.8.0):**
+  - **Lugar de diagnóstico (Q1 / M):** Homologado para replicar exactamente la distribución y métricas de Región de Residencia (Perfil 1 / H), asegurando 100% de coherencia en segmentación.
+  - **Preguntas condicionadas (Q3, Q4, Q14, Q16, Q17, Q19, Q20, Q25, Q27):** Exclusión de la opción `No corresponde` y `No respondió` de tablas y gráficos; encabezado de tabla renombrado a `% Derivado`; cálculo del 100% de la distribución efectuado rigurosamente sobre la muestra de pacientes derivados con respuesta efectiva (sumatoria de porcentajes = 100.0%).
+  - **Estandarización de badges:** Sustitución de "Total Encuestadas" por **"Total Encuestados"** y "Total Derivadas" por **"Total Derivados"** en todo el dashboard.
+  - **Limpieza de opciones neutras y vacías:**
+    - Q5 (Col Q): Fusión de "No respondió" dentro de "No recuerdo".
+    - Q6 (Col R): Fusión de "No respondió" dentro de "No recuerdo".
+    - Q18 (Col AD): Retiro de la opción forzada en 0 "No recuerdo", dejando únicamente Sí y No con datos reales.
+    - Q19 (Col AE): Retiro de "No respondió" y recalculo al 100% de la base neta de biopsias (597 personas).
+    - Q23 (Col AI): Fusión de "No respondió" en "No me lo informaron".
+    - Q24 (Col AJ): Fusión de "No respondió" en "No me informaron".
+    - Q33 (Col AS): Fusión de "No respondió" en "Otra".
+    - Q34 (Col AT): Fusión de "No respondió" en "No recuerdo".
+    - Estandarización de la etiqueta de primera persona **"No recuerdo"** (reemplazando "No recuerda" en Q5, Q6 y Q7).
+  - **Auditoría matemática completa:** Verificación matemática al 100.0% de todos los textos de análisis clínico contra el dataset.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.8.0`.
+
 ## [2.1.2] - 2026-10-20
 
 ### Changed
