@@ -109,3 +109,4 @@
 - [x] Estandarizar badges de preguntas: cambiar "Total Encuestadas" a "Total Encuestados" y "Total Derivadas" a "Total Derivados". Versión 1.7.0.
 - [x] Pregunta 18 (Columna AD: Indicación de biopsia): eliminar la opción vacía "No recuerdo" del catálogo canónico, conservando únicamente "Sí" (98.4%) y "No" (1.6%). Versión 1.7.1.
 - [x] Auditoría integral pregunta por pregunta de todos los textos de análisis clínico: validación matemática de porcentajes y menciones contra el dataset, con precisión del 100.0%. Versión 1.7.2.
+- [x] Actualizar denominación editorial de "Viaje de la Paciente" a "La Ruta de la Paciente" en el encabezado principal, administración y descripción del plugin. Versión 1.8.1.

@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto se documentarán en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.1.4] - 2026-10-20
+
+### Changed
+- **Renombrado Editorial de la Encuesta (`observerMetricsWeb` v1.8.1):**
+  - Modificado el título principal en el hero del dashboard: de *"Viaje de la Paciente con Cáncer de Mama"* a **"La Ruta de la Paciente con Cáncer de Mama"**.
+  - Actualizado el texto de encabezado en la administración de WordPress (`class-admin.php`).
+  - Actualizada la descripción oficial del plugin en `observatorio-metricas.php`.
+  - Incremento de versión `OBS_METRICS_VERSION` a `1.8.1`.
+
 ## [2.1.3] - 2026-10-20
 
 ### Changed
