@@ -100,3 +100,4 @@
 - [x] Calcular el "% Derivado" exactamente sobre el 100% de los datos derivados registrados (base de respuestas válidas de la subpoblación), garantizando que la suma de porcentajes de las opciones totalice el 100.0%. Versión 1.6.1.
 - [x] Pregunta 6 (Columna R: Tiempo hasta buscar atención médica): fusionar el registro de "No respondió" dentro de "No recuerda" y eliminar la fila/opción "No respondió". Versión 1.6.2.
 - [x] Pregunta 19 (Columna AE: Tiempo hasta realizar la biopsia): eliminar la opción/fila "No respondió" (2 casos) y reparar el "% Derivado" recalculándolo sobre el 100% de la base válida de 597 pacientes. Versión 1.6.3.
+- [x] Pregunta 5 (Columna Q: Detección inicial de la señal): fusionar el registro de "No respondió" dentro de "No recuerda", eliminar la opción "No respondió" y recalcular el "% Universo" cerrando al 100.0% de las 612 encuestadas. Versión 1.6.4.
