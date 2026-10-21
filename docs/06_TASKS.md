@@ -106,3 +106,4 @@
 - [x] Pregunta 34 (Columna AT: Acudió a sector privado por rapidez): fusionar el registro de "No respondió" dentro de "No recuerdo" (9 casos, 1.5%), eliminar la opción "No respondió" y recalcular porcentajes cerrando al 100.0%. Versión 1.6.7.
 - [x] Estandarizar la opción de respuesta a primera persona "No recuerdo" en todas las preguntas (reemplazando "No recuerda" en Q5, Q6 y Q7 en dataset y catálogos canónicos). Versión 1.6.8.
 - [x] Pregunta 23 (Columna AI: Subtipo de cáncer informado): fusionar los 2 registros de "No respondió" dentro de "No me lo informaron" (239 casos, 39.1%), eliminar la opción "No respondió" y recalcular porcentajes al 100.0%. Versión 1.6.9.
+- [x] Estandarizar badges de preguntas: cambiar "Total Encuestadas" a "Total Encuestados" y "Total Derivadas" a "Total Derivados". Versión 1.7.0.
