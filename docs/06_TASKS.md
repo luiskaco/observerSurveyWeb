@@ -95,3 +95,4 @@
 - [x] Homologar Pregunta 1 (Columna M: Lugar de diagnóstico) para replicar exactamente la métrica, dataset y análisis de Región de Residencia (Columna H), eliminando incongruencias de regiones no muestreadas. Versión 1.5.6.
 - [x] Ocultar badge redundante de "Respondieron: XX (YY%)" en todas las tarjetas de preguntas, conservando únicamente el badge de "Total Encuestadas: XX personas". Versión 1.5.7.
 - [x] Renombrar encabezado de columna de tabla a "% Derivado" en preguntas condicionadas con total derivadas (Q3 y Q4) y asegurar que el cálculo de % en tabla y gráficos use exclusivamente la cantidad de derivadas (125). Versión 1.5.8.
+- [x] Extender lógica condicional a todas las preguntas dependientes (Q3, Q4, Q14, Q16, Q17, Q19, Q20, Q25, Q27): excluir "No corresponde" de tablas y gráficos, cambiar encabezado a "% Derivado", calcular el porcentaje y gráficos sobre la base de derivadas y actualizar narrativas de análisis clínico. Versión 1.5.9.
