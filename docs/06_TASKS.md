@@ -108,3 +108,4 @@
 - [x] Pregunta 23 (Columna AI: Subtipo de cáncer informado): fusionar los 2 registros de "No respondió" dentro de "No me lo informaron" (239 casos, 39.1%), eliminar la opción "No respondió" y recalcular porcentajes al 100.0%. Versión 1.6.9.
 - [x] Estandarizar badges de preguntas: cambiar "Total Encuestadas" a "Total Encuestados" y "Total Derivadas" a "Total Derivados". Versión 1.7.0.
 - [x] Pregunta 18 (Columna AD: Indicación de biopsia): eliminar la opción vacía "No recuerdo" del catálogo canónico, conservando únicamente "Sí" (98.4%) y "No" (1.6%). Versión 1.7.1.
+- [x] Auditoría integral pregunta por pregunta de todos los textos de análisis clínico: validación matemática de porcentajes y menciones contra el dataset, con precisión del 100.0%. Versión 1.7.2.
