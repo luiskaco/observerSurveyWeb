@@ -24,6 +24,7 @@ class Plugin {
         add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_shortcode( 'encuesta_cancer_mama', array( $this, 'render_shortcode' ) );
+        add_shortcode( 'observatorio_survey', array( $this, 'render_shortcode' ) );
         add_shortcode( 'short_survey', array( $this, 'render_shortcode' ) );
 
         if ( is_admin() ) {
@@ -70,3 +71,4 @@ class Plugin {
         return ob_get_clean();
     }
 }
+
